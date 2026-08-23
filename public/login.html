@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ffffff">
+  <title>Business to Development | Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="./assets/img/favicon.png">
+  <link rel="stylesheet" href="./assets/css/auth.css">
+</head>
+<body>
+  <main class="auth-card" id="authCard">
+    <section class="form-section">
+      <form class="form-view active" id="loginForm">
+        <div class="brand">
+          <img class="brand-logo" src="./assets/img/logo.png" alt="Business to Development">
+        </div>
+        <h1>Welcome back</h1>
+        <div class="field">
+          <label for="loginEmail">Email address</label>
+          <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <div class="password-wrap">
+            <input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+            <button class="password-toggle" type="button" data-password-toggle="loginPassword">Show</button>
+          </div>
+        </div>
+        <div class="row">
+          <label class="remember">
+            <input type="checkbox">
+            <span>Remember me</span>
+          </label>
+          <button class="switch-link" id="forgotPasswordLink" type="button">Forgot password?</button>
+        </div>
+        <button class="primary-btn" type="submit">Login</button>
+        <p class="switch-note">
+          Don't have an account?
+          <button class="switch-link" type="button" data-switch="signup">Sign up</button>
+        </p>
+      </form>
+
+      <form class="form-view" id="signupForm">
+        <div class="brand">
+          <img class="brand-logo" src="./assets/img/logo.png" alt="Business to Development">
+        </div>
+        <h1>Create account</h1>
+        <div class="field">
+          <label for="fullName">Full name</label>
+          <input id="fullName" type="text" placeholder="Your full name" autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label for="signupEmail">Email address</label>
+          <input id="signupEmail" type="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="signupPassword">Password</label>
+          <div class="password-wrap">
+            <input id="signupPassword" type="password" placeholder="Create a password" autocomplete="new-password" minlength="8" required>
+            <button class="password-toggle" type="button" data-password-toggle="signupPassword">Show</button>
+          </div>
+        </div>
+        <button class="primary-btn" type="submit">Sign up</button>
+        <p class="switch-note">
+          Already have an account?
+          <button class="switch-link" type="button" data-switch="login">Login</button>
+        </p>
+      </form>
+
+      <form class="form-view" id="forgotForm">
+        <div class="brand">
+          <img class="brand-logo" src="./assets/img/logo.png" alt="Business to Development">
+        </div>
+        <h1>Reset password</h1>
+        <p class="forgot-copy">Enter the email address linked to your account and we'll send a secure reset link.</p>
+        <div class="field">
+          <label for="resetEmail">Email address</label>
+          <input id="resetEmail" type="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <button class="primary-btn" type="submit">Send reset link</button>
+        <div class="forgot-success" id="forgotSuccess" role="status" aria-live="polite"></div>
+        <button class="back-link" id="backToLogin" type="button">← Back to login</button>
+      </form>
+    </section>
+
+    <aside class="visual-panel">
+      <div class="visual-content">
+        <div class="visual-copy" id="visualCopy">
+          <div class="visual-kicker" id="visualKicker">Continue your blueprint</div>
+          <h2><span class="visual-title-text" id="visualTitle">Pick up where you left off.</span></h2>
+          <p id="visualText">Return to the exact point you left off with your project context, requirements, architecture decisions, generated artifacts and review history preserved.</p>
+        </div>
+      </div>
+    </aside>
+  </main>
+  <script type="module" src="./assets/js/auth.js"></script>
+</body>
+</html>

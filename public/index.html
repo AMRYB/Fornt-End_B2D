@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Business to Development | AI Project Workspace</title>
+<link rel="icon" type="image/png" href="./assets/img/favicon.png">
+<style>
+:root{
+  --bg:#000;--sidebar:#050505;--surface:#0e0e0e;--elev:#141414;--elev2:#1c1c1c;--hover:#202020;
+  --text:#fff;--muted:#afafaf;--dim:#787878;--border:#292929;--border2:#3a3a3a;--danger:#ff7c7c;
+  --r:8px;--card:12px;--pill:999px;--side:236px;--top:54px;
+  --spring:.667s linear(0,.01942 1.83%,.07956 4.02%,.47488 13.851%,.65981 19.572%,.79653 25.733%,.84834 29.083%,.89048 32.693%,.9246 36.734%,.95081 41.254%,.97012 46.425%,.98361 52.535%,.99665 68.277%,.99988);
+}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",Arial,sans-serif;font-size:14px;line-height:1.63;overflow:hidden}
+button,input,textarea,select{font:inherit;color:inherit}button{border:0;background:none;cursor:pointer}.hidden{display:none!important}.muted{color:var(--muted)}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#272727;border-radius:99px}::-webkit-scrollbar-track{background:transparent}
+.app{height:100vh;display:grid;grid-template-columns:var(--side) 1fr}.sidebar{background:var(--sidebar);border-right:1px solid #181818;display:flex;flex-direction:column;min-width:0;z-index:90}.main{min-width:0;position:relative;height:100vh;background:#000;overflow:hidden}
+.icon{width:18px;height:18px;display:block;flex:0 0 auto}.icon.sm{width:15px;height:15px}.icon.lg{width:22px;height:22px}.stroke{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.sb-head{height:54px;padding:0 10px;display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:9px;padding:0 6px;font-weight:650;font-size:15px}.brand-mark{width:24px;height:24px;border:1px solid #fff;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:700}
+.icon-btn,.tiny-btn{display:grid;place-items:center;border-radius:8px;color:#d8d8d8}.icon-btn{width:34px;height:34px}.tiny-btn{width:28px;height:28px}.icon-btn:hover,.tiny-btn:hover{background:#171717}
+.new-chat{height:42px;margin:0 10px 8px;border-radius:9px;background:#1d1d1d;display:flex;align-items:center;gap:10px;padding:0 12px;font-weight:500}.new-chat:hover{background:#252525}.sb-scroll{flex:1;min-height:0;overflow:auto;padding:0 8px 10px}.nav,.side-row{width:100%;height:34px;border-radius:8px;padding:0 9px;display:flex;align-items:center;gap:10px;text-align:left;white-space:nowrap;overflow:hidden}.nav:hover,.side-row:hover{background:#151515}.nav.active{background:#171717}.side-row .label,.nav .label{overflow:hidden;text-overflow:ellipsis}.section{padding:13px 8px 5px;color:#858585;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between}.section button{color:#777;border-radius:6px}.section button:hover{color:#fff;background:#171717}.divider{height:1px;background:#1a1a1a;margin:7px}
+.sb-foot{padding:8px 10px 10px;border-top:1px solid #161616}.account{min-height:50px;border:1px solid #242424;border-radius:10px;padding:7px 9px;display:flex;align-items:center;gap:9px;width:100%;text-align:left}.account:hover{background:#101010}.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#555}.acct-meta{min-width:0;flex:1}.acct-name{font-size:13px}.badge{font-size:10px;padding:1px 5px;border-radius:5px;background:#282828;color:#ddd;width:max-content;line-height:1.4}
+.topbar{height:var(--top);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 14px;position:relative;z-index:60;background:#000}.top-left,.top-right{display:flex;align-items:center;gap:6px}.top-right{justify-self:end}.top-left{justify-self:start}.segment{height:36px;min-width:205px;border:1px solid #2a2a2a;background:#111;padding:2px;border-radius:999px;display:flex}.segment button{flex:1;border-radius:999px;color:#999;font-size:12px;font-weight:650}.segment button.active{background:#1f1f1f;color:#fff}.model-btn{height:34px;padding:0 10px;border-radius:8px;display:flex;align-items:center;gap:6px;color:#e9e9e9}.model-btn:hover{background:#151515}.top-pill{height:32px;padding:0 10px;border:1px solid #282828;border-radius:999px;color:#d2d2d2;display:flex;align-items:center;gap:6px}.top-pill:hover{background:#141414}.top-pill.active{background:#fff;color:#000;border-color:#fff}
+.content{height:calc(100vh - var(--top));overflow:auto;position:relative}.chat-shell{max-width:850px;margin:0 auto;min-height:100%;padding:0 18px 170px}.home{padding-top:145px}.home.started{padding-top:16px}.greeting{text-align:center;font-size:24px;line-height:1.17;font-weight:400;letter-spacing:-.4px;margin:0 0 28px}.home.started .greeting,.home.started .starter{display:none}
+.messages{display:flex;flex-direction:column;gap:22px}.msg{display:flex;gap:12px;animation:rise .2s ease both}.msg.user{justify-content:flex-end}.user-bubble{max-width:76%;padding:9px 13px;border:1px solid #2c2c2c;background:#202020;border-radius:18px 18px 6px 18px;white-space:pre-wrap}.assistant-mark{width:28px;height:28px;border:1px solid #383838;border-radius:9px;display:grid;place-items:center;font-size:10px;font-weight:700;flex:0 0 auto}.assistant-body{max-width:83%;min-width:0}.assistant-text{white-space:pre-wrap;color:#f2f2f2}.msg-actions{display:flex;gap:2px;margin-top:8px;color:#8f8f8f}.msg-actions button{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:inherit}.msg-actions button:hover{background:#151515;color:#fff}.source-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.source-chip{height:28px;padding:0 9px;border:1px solid #2f2f2f;border-radius:999px;color:#bdbdbd;font-size:11px}.source-chip:hover{background:#141414;color:#fff}.status-card{border:1px solid #2a2a2a;background:#0d0d0d;border-radius:12px;padding:10px 12px;margin:8px 0 10px}.status-head{display:flex;align-items:center;justify-content:space-between}.status-steps{margin-top:7px;color:#9e9e9e;font-size:12px}.status-step{display:flex;gap:7px;align-items:center;margin:3px 0}.dot{width:6px;height:6px;border-radius:50%;background:#8b8b8b}.dot.live{animation:pulse 1.1s infinite}
+.starter{display:flex;flex-direction:column;gap:8px;margin-top:10px}.starter button{height:54px;border:1px solid #252525;border-radius:12px;padding:0 14px;display:flex;align-items:center;gap:12px;text-align:left}.starter button:hover{background:#0d0d0d;border-color:#353535}.starter .arrow{margin-left:auto;color:#777}
+.composer-wrap{position:fixed;left:var(--side);right:0;bottom:0;z-index:65;pointer-events:none;padding:0 18px 14px;background:linear-gradient(to top,#000 72%,rgba(0,0,0,.94) 84%,transparent)}.composer-stack{max-width:850px;margin:0 auto;pointer-events:auto}
+.follow-waiting{display:none;align-items:center;justify-content:flex-end;gap:7px;color:#8f8f8f;font-size:12px;margin:0 8px 8px}.follow-waiting.show{display:flex}.follow-resume{display:none;width:max-content;margin:0 0 8px auto;height:32px;padding:0 12px;border:1px solid #383838;border-radius:18px;background:#181818;color:#e5e5e5}.follow-resume.show{display:block}.follow-resume:hover{background:#222}
+.followup{display:none;background:#212121;border:1px solid #2f2f2f;border-radius:18px;padding:20px 18px 12px;margin-bottom:10px;max-height:min(430px,52vh);overflow:auto}.followup.show{display:block;animation:rise .22s var(--spring)}.follow-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:8px}.follow-title{font-weight:600;font-size:16px;line-height:1.5;color:#fff;min-width:0}.follow-nav{display:flex;align-items:center;gap:3px;flex:0 0 auto;color:#aaa;direction:ltr}.follow-nav button{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#aaa;font-size:20px}.follow-nav button:hover:not(:disabled){background:#2c2c2c;color:#fff}.follow-nav button:disabled{opacity:.25;cursor:default}.follow-progress{font-size:12px;min-width:48px;text-align:center;color:#a9a9a9}.follow-sub{font-size:12px;color:#a9a9a9;margin:0 0 9px}.follow-options{display:flex;flex-direction:column;gap:2px}.choice{min-height:40px;width:100%;padding:5px 8px;border-radius:10px;background:transparent;color:#f3f3f3;display:grid;grid-template-columns:32px minmax(0,1fr) 20px;align-items:center;gap:8px;text-align:left}.choice:hover{background:#292929}.choice .num{width:28px;height:28px;border-radius:50%;border:1px solid #4a4a4a;display:grid;place-items:center;font-size:12px;color:#e8e8e8}.choice .choice-label{line-height:1.45}.choice .tick{opacity:0;color:#fff;text-align:center}.choice.selected{background:#292929}.choice.selected .num{background:#fff;color:#000;border-color:#fff}.choice.selected .tick{opacity:1}.follow-content[dir=rtl] .choice{text-align:right;grid-template-columns:32px minmax(0,1fr) 20px}.follow-content[dir=rtl] .follow-title,.follow-content[dir=rtl] .follow-sub{text-align:right}
+.custom-answer{display:none;margin-top:8px;padding:10px;border:1px solid #3b3b3b;border-radius:12px;background:#181818}.custom-answer.show{display:block}.custom-answer textarea,.follow-textarea{width:100%;min-height:74px;resize:vertical;background:transparent;border:0;outline:0;color:#fff;line-height:1.55;padding:0}.custom-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:8px}.follow-footer{min-height:42px;margin-top:8px;padding-top:8px;border-top:1px solid #2e2e2e;display:flex;align-items:center;justify-content:space-between;gap:8px}.follow-hint{font-size:11px;color:#858585}.follow-footer-actions{display:flex;align-items:center;gap:6px}.follow-btn{height:34px;padding:0 14px;border-radius:18px;background:#2a2a2a;color:#fff;font-weight:500}.follow-btn:hover{background:#343434}.follow-btn.primary{background:#fff;color:#000}.follow-btn:disabled{opacity:.35;cursor:default}.follow-btn.ghost{background:transparent}.follow-btn.ghost:hover{background:#2a2a2a}
+.case-lab-wrap{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:180;display:none;align-items:center;justify-content:center;padding:20px}.case-lab-wrap.show{display:flex}.case-lab{width:min(760px,100%);max-height:84vh;overflow:auto;background:#111;border:1px solid #303030;border-radius:18px;padding:18px}.case-lab-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.case-lab h2{font-size:20px;margin:0}.case-lab p{color:#aaa;margin:3px 0 0}.case-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.case-card{padding:13px;border:1px solid #2d2d2d;border-radius:12px;background:#181818;text-align:left}.case-card:hover{background:#202020;border-color:#414141}.case-card strong{display:block;font-size:13px}.case-card small{display:block;color:#929292;margin-top:2px;line-height:1.45}.case-tag{display:inline-flex;margin-top:8px;padding:2px 7px;border-radius:999px;background:#262626;color:#bdbdbd;font-size:10px}.case-lab-foot{margin-top:12px;padding-top:12px;border-top:1px solid #292929;color:#8f8f8f;font-size:11px}
+.attach-tray{display:none;gap:8px;flex-wrap:wrap;margin-bottom:8px}.attach-tray.show{display:flex}.file-chip{height:44px;max-width:210px;border:1px solid #303030;border-radius:10px;padding:0 9px;background:#111;display:flex;align-items:center;gap:8px}.file-chip .meta{min-width:0}.file-chip .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.file-chip .type{font-size:10px;color:#888}.file-chip .x{margin-left:auto;color:#888}.thumb{width:34px;height:34px;border-radius:7px;object-fit:cover;background:#202020}
+.tool-strip{display:none;gap:6px;flex-wrap:wrap;margin-bottom:8px}.tool-strip.show{display:flex}.tool-token{height:30px;padding:0 9px;border:1px solid #343434;border-radius:999px;background:#131313;color:#d3d3d3;display:flex;align-items:center;gap:6px;font-size:11px}.tool-token button{color:#888}.tool-token button:hover{color:#fff}
+.composer{min-height:116px;border:1px solid #292929;background:#202020;border-radius:22px;padding:13px 13px 10px;position:relative}.composer:focus-within{border-color:#3c3c3c;background:#222}.composer textarea{width:100%;height:60px;max-height:190px;resize:none;background:transparent;border:0;outline:0;padding:0 5px;color:#fff;line-height:1.55;font-size:15px}.composer textarea::placeholder{color:#989898}.composer-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}.c-left,.c-right{display:flex;align-items:center;gap:5px}.circle{height:34px;min-width:34px;padding:0 8px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;color:#e8e8e8}.circle:hover{background:#2b2b2b}.mode-label{font-size:12px;color:#d0d0d0}.send{width:36px;height:36px;border-radius:50%;background:#fff;color:#000;display:grid;place-items:center;opacity:.45;pointer-events:none}.send.ready{opacity:1;pointer-events:auto}.send.stop{opacity:1;pointer-events:auto}.send:hover{transform:scale(1.03)}
+.menu{display:none;position:fixed;z-index:220;min-width:220px;background:#171717;border:1px solid #303030;border-radius:12px;padding:6px}.menu.show{display:block;animation:rise .13s ease}.menu-title{padding:8px 10px 5px;color:#777;font-size:11px;font-weight:600}.menu button,.menu .menu-item{width:100%;min-height:36px;padding:7px 10px;border-radius:8px;display:flex;align-items:center;gap:10px;text-align:left}.menu button:hover,.menu .menu-item:hover{background:#232323}.menu .right{margin-left:auto;color:#777;font-size:11px}.menu-sep{height:1px;background:#292929;margin:5px 4px}.check{margin-left:auto;color:#fff}
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.64);z-index:300;align-items:center;justify-content:center;padding:20px}.modal-wrap.show{display:flex}.modal{width:min(720px,96vw);max-height:min(760px,92vh);overflow:hidden;border:1px solid #2c2c2c;background:#0d0d0d;border-radius:16px;display:flex;flex-direction:column}.modal.sm{width:min(460px,96vw)}.modal.lg{width:min(980px,96vw)}.modal-head{height:56px;padding:0 16px;border-bottom:1px solid #202020;display:flex;align-items:center;justify-content:space-between}.modal-head h2{font-size:16px;margin:0}.modal-body{padding:14px 16px;overflow:auto}.modal-foot{border-top:1px solid #202020;padding:12px 16px;display:flex;justify-content:flex-end;gap:8px}.btn{height:34px;padding:0 12px;border:1px solid #383838;border-radius:8px;color:#e7e7e7}.btn:hover{background:#181818}.btn.primary{background:#fff;color:#000;border-color:#fff}.btn.danger{color:#ff9c9c}.field{margin-bottom:12px}.field label{display:block;color:#aaa;font-size:12px;margin-bottom:5px}.input,.textarea,.select{width:100%;border:1px solid #303030;background:#151515;border-radius:9px;outline:0}.input,.select{height:38px;padding:0 10px}.textarea{min-height:92px;padding:9px 10px;resize:vertical}.input:focus,.textarea:focus,.select:focus{border-color:#4a4a4a}.tabs{display:flex;gap:4px;border-bottom:1px solid #232323;padding:0 16px}.tabs button{height:42px;padding:0 11px;color:#8f8f8f;border-bottom:2px solid transparent}.tabs button.active{color:#fff;border-color:#fff}.list{display:flex;flex-direction:column;gap:8px}.card-row{border:1px solid #272727;background:#111;border-radius:12px;padding:11px 12px;display:flex;align-items:center;gap:10px}.card-row .grow{min-width:0;flex:1}.card-row strong{display:block;font-size:13px}.card-row small{display:block;color:#888}.switch{width:36px;height:20px;border-radius:999px;background:#303030;padding:2px;transition:.2s}.switch i{display:block;width:16px;height:16px;border-radius:50%;background:#8d8d8d;transition:.2s}.switch.on{background:#fff}.switch.on i{background:#000;transform:translateX(16px)}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.plugin-card,.work-card{border:1px solid #292929;background:#111;border-radius:13px;padding:13px}.plugin-card h3,.work-card h3{margin:0 0 3px;font-size:14px}.plugin-card p,.work-card p{margin:0 0 10px;color:#8f8f8f;font-size:12px}.plugin-icon{width:34px;height:34px;border:1px solid #343434;border-radius:10px;display:grid;place-items:center;margin-bottom:9px}
+.search-box{height:44px;border:1px solid #303030;background:#151515;border-radius:10px;display:flex;align-items:center;gap:9px;padding:0 11px}.search-box input{flex:1;background:transparent;border:0;outline:0}.filters{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.filter{height:28px;padding:0 9px;border:1px solid #303030;border-radius:999px;color:#aaa;font-size:11px}.filter.active{background:#fff;color:#000;border-color:#fff}.search-result{padding:10px;border-radius:10px;display:flex;gap:10px;align-items:flex-start}.search-result:hover{background:#151515}.search-result .grow{min-width:0;flex:1}.search-result strong{display:block}.search-result small{color:#777}.kbd{font-size:10px;border:1px solid #343434;background:#171717;border-radius:5px;padding:1px 5px;color:#8f8f8f}
+.work-view{display:none;max-width:1040px;margin:0 auto;padding:34px 20px 90px}.work-view.show{display:block}.work-view h1{font-size:24px;margin:0 0 3px}.work-sub{color:#999;margin-bottom:20px}.work-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.work-card{min-height:150px}.work-card .btn{margin-top:4px}.job-panel{margin-top:14px;border:1px solid #292929;border-radius:14px;background:#0d0d0d;padding:14px}.job-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1d1d1d}.job-row:last-child{border-bottom:0}.progress{height:5px;background:#242424;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;width:68%;background:#8c8c8c}
+.voice-screen{display:none;position:fixed;inset:0;z-index:350;background:#050505;align-items:center;justify-content:center;flex-direction:column}.voice-screen.show{display:flex}.orb{width:150px;height:150px;border-radius:50%;border:1px solid #3f3f3f;display:grid;place-items:center;position:relative}.orb:before,.orb:after{content:"";position:absolute;border:1px solid #252525;border-radius:50%;animation:voice 2.1s infinite}.orb:before{inset:-22px}.orb:after{inset:-44px;animation-delay:.45s}.orb-core{width:84px;height:84px;border-radius:50%;background:#fff;color:#000;display:grid;place-items:center}.voice-label{font-size:20px;margin-top:28px}.voice-sub{color:#888;margin-top:4px}.voice-controls{display:flex;gap:10px;margin-top:34px}.voice-controls button{width:48px;height:48px;border:1px solid #333;border-radius:50%;display:grid;place-items:center}.voice-controls .end{background:#fff;color:#000;border-color:#fff}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);background:#fff;color:#000;padding:7px 11px;border-radius:999px;opacity:0;pointer-events:none;z-index:500;font-size:12px;transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes pulse{0%,100%{opacity:.28}50%{opacity:1}}@keyframes voice{0%{transform:scale(.94);opacity:.25}50%{transform:scale(1.04);opacity:.7}100%{transform:scale(.94);opacity:.25}}
+@media(max-width:900px){:root{--side:0px}.app{grid-template-columns:1fr}.sidebar{position:fixed;left:-250px;top:0;bottom:0;width:236px;transition:left .28s ease}.sidebar.open{left:0}.mobile-only{display:grid!important}.composer-wrap{left:0}.work-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.top-left .model-btn{display:none}}
+@media(min-width:901px){.mobile-only{display:none!important}}
+
+#attachMenu button:hover .icon-globe{transform:rotate(8deg) scale(1.04)}
+#attachMenu button:hover .icon-research{transform:rotate(-8deg) scale(1.05)}
+#attachMenu button:hover .icon-spark{animation:sparkPulse .75s ease infinite alternate}
+#attachMenu button:hover .icon-book{transform:translateY(-1px) scale(1.04)}
+@keyframes sparkPulse{from{transform:scale(.94);opacity:.65}to{transform:scale(1.08);opacity:1}}
+
+@media(max-width:650px){.topbar{grid-template-columns:auto 1fr auto;padding:0 8px}.segment{min-width:160px}.top-right .hide-sm{display:none}.chat-shell{padding:0 10px 170px}.composer-wrap{padding:0 10px 10px}.home{padding-top:85px}.greeting{font-size:22px}.user-bubble{max-width:90%}.assistant-body{max-width:90%}.followup{padding:16px 12px;max-height:56vh}.case-grid{grid-template-columns:1fr}.follow-head{gap:8px}.follow-title{font-size:15px}.work-grid,.grid2{grid-template-columns:1fr}.work-view{padding:20px 10px 80px}.composer{border-radius:18px}}
+
+/* =========================================================
+   DEVOPS DAYS CAIRO 2026   WHITE BRAND THEME
+   Palette: #084c75 / #9e1f63 / #00a2c8 / #ffca33 / white
+   ========================================================= */
+:root{
+  --brand-blue:#084c75;
+  --brand-magenta:#9e1f63;
+  --brand-cyan:#00a2c8;
+  --brand-yellow:#ffca33;
+  --brand-ink:#173142;
+  --bg:#ffffff;
+  --sidebar:#ffffff;
+  --surface:#ffffff;
+  --elev:#f5f8fa;
+  --elev2:#edf4f7;
+  --hover:#eef9fc;
+  --text:#173142;
+  --muted:#667c89;
+  --dim:#8496a1;
+  --border:#d9e5eb;
+  --border2:#bfd2dd;
+  --danger:#a61b52;
+}
+html,body{background:#fff;color:var(--brand-ink)}
+body{accent-color:var(--brand-cyan)}
+::selection{background:#00a2c833;color:#084c75}
+::-webkit-scrollbar-thumb{background:#cbdbe3}
+::-webkit-scrollbar-thumb:hover{background:#afc7d3}
+
+.app,.main,.content,.topbar{background:#fff;color:var(--brand-ink)}
+.main{position:relative}
+.main:before{content:"";position:absolute;z-index:120;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--brand-blue) 0 28%,var(--brand-cyan) 28% 52%,var(--brand-yellow) 52% 74%,var(--brand-magenta) 74% 100%);pointer-events:none}
+.sidebar{background:#fff;border-right:1px solid var(--border)}
+.sb-head{height:136px;padding:10px 10px 8px;position:relative;border-bottom:1px solid #e5eef2;align-items:center}
+.event-brand{width:100%;height:118px;padding:0;display:flex;align-items:center;justify-content:center}
+.brand-logo{display:block;height:112px;width:auto;max-width:150px;object-fit:contain}
+.sb-head>.icon-btn{position:absolute;right:7px;top:7px;background:#ffffffd9;border:1px solid #dce7ec;color:var(--brand-blue)}
+.sb-head>.icon-btn:hover{background:#f0f8fb;color:var(--brand-cyan)}
+.brand-mark{display:none}
+
+.icon-btn,.tiny-btn{color:var(--brand-blue)}
+.icon-btn:hover,.tiny-btn:hover{background:#eef8fb;color:var(--brand-cyan)}
+.new-chat{background:var(--brand-blue);color:#fff;border:1px solid var(--brand-blue);font-weight:600}
+.new-chat:hover{background:#063e60;border-color:#063e60}
+.nav,.side-row{color:#294657}
+.nav .icon,.side-row .icon{color:var(--brand-blue)}
+.nav:hover,.side-row:hover{background:#eef9fc;color:var(--brand-blue)}
+.nav.active{background:#e7f7fb;color:var(--brand-blue)}
+.section{color:var(--brand-magenta);font-weight:700}
+.section button{color:#8095a1}
+.section button:hover{color:var(--brand-magenta);background:#fbf0f6}
+.divider{background:#e6edf1}
+.sb-foot{border-top:1px solid #e5edf1;background:#fff}
+.account{border-color:#d6e3e9;background:#fff;color:var(--brand-ink)}
+.account:hover{background:#f6fafc}
+.avatar{background:var(--brand-cyan);color:#fff;font-weight:700}
+.badge{background:#fff3c2;color:#715800;border:1px solid #ffe184}
+
+.segment{border-color:#d6e3e9;background:#f3f7f9}
+.segment button{color:#6c818d}
+.segment button:hover{color:var(--brand-blue)}
+.segment button.active{background:#fff;color:var(--brand-blue);box-shadow:inset 0 0 0 1px #c7dbe4}
+.model-btn{color:var(--brand-blue);font-weight:600}
+.model-btn:hover{background:#eef8fb}
+.top-pill{border-color:#d4e2e8;color:var(--brand-blue);background:#fff}
+.top-pill:hover{background:#eef9fc}
+.top-pill.active{background:var(--brand-blue);color:#fff;border-color:var(--brand-blue)}
+
+.greeting{color:var(--brand-blue);font-weight:500}
+.assistant-mark{border-color:#c8dce5;background:#f5fbfd;color:var(--brand-blue)}
+.assistant-text{color:#1c3443}
+.user-bubble{background:var(--brand-blue);color:#fff;border-color:var(--brand-blue)}
+.msg-actions{color:#8194a0}
+.msg-actions button:hover{background:#eef7fa;color:var(--brand-blue)}
+.source-chip{border-color:#cfe0e7;color:var(--brand-blue);background:#fff}
+.source-chip:hover{background:#edf9fc;color:var(--brand-cyan)}
+.status-card{border-color:#d8e5ea;background:#f8fbfc}
+.status-steps{color:#6c808c}.dot{background:var(--brand-cyan)}
+
+.starter button{border-color:#d7e4ea;background:#fff;color:#234456}
+.starter button:hover{background:#f4fbfd;border-color:#9ed8e6;color:var(--brand-blue)}
+.starter .arrow{color:var(--brand-cyan)}
+
+.composer-wrap{background:linear-gradient(to top,#fff 72%,rgba(255,255,255,.95) 84%,rgba(255,255,255,0))}
+.tool-token{border-color:#cddde5;background:#f7fafb;color:#315163}
+.tool-token button{color:#7d909a}.tool-token button:hover{color:var(--brand-magenta)}
+.composer{border:1px solid #bfd4de;background:#fff;box-shadow:none}
+.composer:focus-within{border-color:var(--brand-cyan);background:#fff;outline:3px solid #00a2c812}
+.composer textarea{color:#173142}
+.composer textarea::placeholder{color:#8b9da7}
+.circle{color:var(--brand-blue)}
+.circle:hover{background:#edf8fb;color:var(--brand-cyan)}
+.mode-label{color:#426174}
+.send{background:var(--brand-blue);color:#fff}
+.send.ready:hover{background:var(--brand-cyan);transform:scale(1.03)}
+
+.follow-waiting{color:#6e828e}
+.follow-resume{border-color:#cbdde5;background:#fff;color:var(--brand-blue)}
+.follow-resume:hover{background:#eef9fc}
+.followup{background:#fff;border:1px solid #cfe0e7;border-top:3px solid var(--brand-magenta);box-shadow:none}
+.follow-title{color:var(--brand-blue)}
+.follow-nav{color:#718690}
+.follow-nav button{color:#718690}
+.follow-nav button:hover:not(:disabled){background:#eef8fb;color:var(--brand-blue)}
+.follow-progress,.follow-sub{color:#6c808c}
+.choice{color:#203f50}
+.choice:hover{background:#eef9fc}
+.choice .num{border-color:#a8c6d3;color:var(--brand-blue);background:#fff}
+.choice .tick{color:var(--brand-cyan)}
+.choice.selected{background:#eaf8fb}
+.choice.selected .num{background:var(--brand-cyan);color:#fff;border-color:var(--brand-cyan)}
+.follow-footer{border-top-color:#e2ebef}
+.follow-footer button{color:var(--brand-blue)}
+.follow-footer button:hover{background:#eef8fb}
+.follow-footer .follow-primary{background:var(--brand-blue);color:#fff;border-color:var(--brand-blue)}
+.follow-footer .follow-primary:hover{background:#063f61}
+.follow-custom-input{border-color:#c7dae3;background:#fff;color:#173142}
+.follow-custom-input:focus{border-color:var(--brand-cyan);outline:3px solid #00a2c812}
+
+.case-lab-wrap{background:rgba(8,76,117,.16);backdrop-filter:blur(2px)}
+.case-lab{background:#fff;border-color:#cbdde5}
+.case-lab h2{color:var(--brand-blue)}
+.case-lab p{color:#667c89}
+.case-card{border-color:#d7e4ea;background:#fff;color:#173142}
+.case-card:hover{background:#f2fbfd;border-color:#8fd3e3}
+.case-card small{color:#71848f}
+.case-tag{background:#fff2b8;color:#634f00;border:1px solid #ffdf61}
+.case-lab-foot{border-top-color:#e1e9ed;color:#71848f}
+
+.menu{background:#fff;border-color:#cddde4;color:#1d3949}
+.menu-title{color:var(--brand-magenta)}
+.menu button:hover,.menu .menu-item:hover{background:#eef9fc}
+.menu .right{color:#80939e}.menu-sep{background:#e0e8ec}.check{color:var(--brand-cyan)}
+
+.modal-wrap{background:rgba(8,76,117,.18);backdrop-filter:blur(2px)}
+.modal{border-color:#cddde5;background:#fff;color:#173142}
+.modal-head,.modal-foot{border-color:#e2eaee}
+.modal-head h2{color:var(--brand-blue)}
+.btn{border-color:#bfd2dc;color:var(--brand-blue);background:#fff}
+.btn:hover{background:#eef9fc}
+.btn.primary{background:var(--brand-blue);color:#fff;border-color:var(--brand-blue)}
+.btn.primary:hover{background:#063f61}
+.btn.danger{color:var(--brand-magenta);border-color:#e7c6d6}
+.field label{color:#657a86}
+.input,.textarea,.select{border-color:#cadbe3;background:#fff;color:#173142}
+.input:focus,.textarea:focus,.select:focus{border-color:var(--brand-cyan);outline:3px solid #00a2c812}
+.tabs{border-bottom-color:#dfe8ec}
+.tabs button{color:#758a95}
+.tabs button.active{color:var(--brand-magenta);border-color:var(--brand-magenta)}
+.card-row,.plugin-card,.work-card{border-color:#d7e4ea;background:#fff}
+.card-row small,.plugin-card p,.work-card p{color:#71848f}
+.plugin-icon{border-color:#cfe0e7;background:#f4fafc;color:var(--brand-cyan)}
+.switch{background:#d9e5ea}.switch i{background:#fff;border:1px solid #b8cbd5}.switch.on{background:var(--brand-cyan)}.switch.on i{background:#fff}
+
+.search-box{border-color:#cbdde5;background:#fff}.search-box input{color:#173142}
+.filter{border-color:#cbdde5;color:#667c89;background:#fff}.filter.active{background:var(--brand-blue);color:#fff;border-color:var(--brand-blue)}
+.search-result:hover{background:#eef9fc}.search-result small{color:#758994}
+.kbd{border-color:#cbdde5;background:#f5f8fa;color:#6e828e}
+
+.work-view{color:#173142}.work-view h1{color:var(--brand-blue)}.work-sub{color:#667c89}
+.job-panel{border-color:#d6e3e9;background:#fff}.job-row{border-bottom-color:#e4ecef}
+.progress{background:#e2ebef}.progress i{background:linear-gradient(90deg,var(--brand-cyan),var(--brand-blue))}
+
+.voice-screen{background:#fff;color:#173142}.orb{border-color:#b9d1dc}.orb:before,.orb:after{border-color:#dbe8ed}.orb-core{background:var(--brand-blue);color:#fff}.voice-sub{color:#6d818d}.voice-controls button{border-color:#cbdde5;background:#fff;color:var(--brand-blue)}.voice-controls .end{background:var(--brand-magenta);color:#fff;border-color:var(--brand-magenta)}
+.toast{background:var(--brand-blue);color:#fff;border:1px solid var(--brand-blue)}
+
+/* Brand-colored micro accents */
+a{color:var(--brand-blue)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--brand-cyan);outline-offset:2px}
+.status-step:nth-child(2n) .dot{background:var(--brand-yellow)}
+.status-step:nth-child(3n) .dot{background:var(--brand-magenta)}
+
+@media(max-width:900px){.sb-head{height:126px}.event-brand{height:108px}.brand-logo{height:102px}}
+
+
+/* ===== v4 Project workspace + ChatGPT-style interaction ===== */
+.topbar{display:flex!important;align-items:center;justify-content:space-between!important;grid-template-columns:none!important}
+.top-left,.top-right{display:flex;align-items:center;gap:6px}
+body.project-empty #tempBtn{display:flex!important}
+body.project-empty #shareBtn,body.project-empty #topMore{display:none!important}
+body:not(.project-empty) #tempBtn{display:none!important}
+body:not(.project-empty) #shareBtn{display:flex!important}
+body:not(.project-empty) #topMore{display:grid!important}
+
+/* event logo stays only in the existing sidebar/menu logo area */
+.sb-head{height:90px!important;padding:8px 10px!important}
+.event-brand{width:100%!important;height:74px!important;padding:0 36px 0 4px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;overflow:hidden!important}
+.brand-logo{display:block!important;width:100%!important;max-width:200px!important;height:66px!important;object-fit:contain!important;object-position:left center!important}
+.sb-head>.icon-btn{top:7px!important;right:7px!important}
+
+/* Empty Project: greeting + composer centered. After first message composer docks to bottom. */
+body.project-empty .content{overflow:auto!important}
+body.project-empty .chat-shell{padding-bottom:0!important}
+body.project-empty .home{min-height:calc(100vh - var(--top));padding-top:0!important;display:flex!important;align-items:center!important;justify-content:center!important;transform:translateY(-72px)}
+body.project-empty .greeting{margin:0!important;text-align:center}
+body.project-empty .composer-wrap{top:55%!important;bottom:auto!important;transform:none!important;background:transparent!important;padding-bottom:0!important;transition:top .16s ease}
+body:not(.project-empty) .composer-wrap{top:auto!important;bottom:0!important;transform:none!important}
+.home.started{padding-top:18px!important}.home.started .greeting{display:none!important}
+
+/* Compact single-line state. */
+.composer{
+  min-height:48px!important;border-radius:26px!important;padding:6px 8px!important;
+  display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;grid-template-rows:auto!important;
+  align-items:center!important;column-gap:5px!important;row-gap:4px!important;overflow:visible!important;
+  transition:min-height .14s ease,border-radius .14s ease,padding .14s ease!important;
+}
+.composer-foot{display:contents!important}
+.c-left{grid-column:1;grid-row:1;align-self:end;display:flex!important;align-items:center;gap:4px}
+.c-right{grid-column:3;grid-row:1;align-self:end;display:flex!important;align-items:center;gap:4px}
+.composer textarea{
+  grid-column:2;grid-row:1;width:100%!important;height:26px;min-height:26px!important;max-height:none!important;
+  padding:3px 4px!important;margin:0!important;resize:none!important;overflow:hidden!important;scrollbar-width:none!important;
+  line-height:20px!important;font-size:15px!important;outline:none!important;box-shadow:none!important;
+  transition:none!important;
+}
+.composer textarea::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+.composer:focus-within,.composer textarea:focus,.composer textarea:focus-visible{outline:none!important;box-shadow:none!important}
+.circle{height:34px!important;min-width:34px!important;padding:0 8px!important}
+.send{width:34px!important;height:34px!important}
+
+/* Multi-line: prompt takes the complete width ABOVE the bottom control row. */
+.composer.multiline{grid-template-columns:auto minmax(0,1fr) auto!important;grid-template-rows:auto 34px!important;padding:9px 8px 7px!important;border-radius:22px!important;align-items:end!important}
+.composer.multiline textarea{grid-column:1 / -1!important;grid-row:1!important;width:100%!important;padding:2px 6px 6px!important}
+.composer.multiline .c-left{grid-column:1;grid-row:2}
+.composer.multiline .c-right{grid-column:3;grid-row:2}
+
+/* OpenAI/ChatGPT-style SVG interaction motion */
+.cgpt-icon{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round;overflow:visible;transition:transform .18s cubic-bezier(.2,.8,.2,1),opacity .18s ease}
+.cgpt-icon.fill{fill:currentColor;stroke:none}
+button:hover .cgpt-icon{transform:scale(1.055)}
+button:active .cgpt-icon{transform:scale(.91)}
+#newChat:hover .icon-compose .pen{transform:translate(1px,-1px)}
+.icon-compose .pen{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+#searchBtn:hover .icon-search circle{transform:scale(1.06);transform-origin:10px 10px}
+.icon-search circle{transition:transform .18s ease}
+#attachBtn:hover .icon-plus{transform:rotate(90deg)}
+#shareBtn:hover .icon-share .arrow{transform:translateY(-1.5px)}
+.icon-share .arrow{transition:transform .18s ease}
+#topMore:hover .dot-a{animation:dotBounce .55s ease 0s}
+#topMore:hover .dot-b{animation:dotBounce .55s ease .08s}
+#topMore:hover .dot-c{animation:dotBounce .55s ease .16s}
+@keyframes dotBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+#voiceBtn:hover .mic-body{animation:micPulse .72s ease infinite alternate;transform-origin:center}
+@keyframes micPulse{from{transform:scaleY(.94)}to{transform:scaleY(1.08)}}
+.send.ready:hover .icon-send{transform:translateY(-2px)}
+.msg-actions button:hover .icon-retry{transform:rotate(-32deg)}
+.msg-actions button:hover .icon-copy .copy-back{transform:translate(-1px,-1px)}
+.icon-copy .copy-back{transition:transform .18s ease}
+
+/* Assistant mark + thinking motion. */
+.assistant-mark{border:0!important;background:transparent!important;width:30px!important;height:30px!important;color:var(--brand-blue)!important;display:grid!important;place-items:center!important;flex:0 0 auto!important}
+.assistant-mark .openai-mark{width:24px;height:24px;display:block;fill:currentColor;transform-origin:center}
+.typing-mark .openai-mark{animation:openaiThink 1.25s cubic-bezier(.45,0,.2,1) infinite}
+@keyframes openaiThink{0%{transform:rotate(0deg) scale(.95);opacity:.45}45%{transform:rotate(155deg) scale(1.02);opacity:1}100%{transform:rotate(360deg) scale(.95);opacity:.45}}
+.thinking-label{display:inline-flex;align-items:center;gap:3px;color:#71848f;padding-top:3px}
+.thinking-label i{width:4px;height:4px;border-radius:50%;background:currentColor;animation:thinkDot 1s ease-in-out infinite}
+.thinking-label i:nth-child(2){animation-delay:.14s}.thinking-label i:nth-child(3){animation-delay:.28s}
+@keyframes thinkDot{0%,65%,100%{transform:translateY(0);opacity:.28}32%{transform:translateY(-3px);opacity:1}}
+
+@media(max-width:650px){
+  body.project-empty .home{transform:translateY(-62px)}
+  body.project-empty .composer-wrap{padding:0 10px!important}
+  .mode-label{display:none!important}
+  .brand-logo{max-width:170px!important;height:58px!important}
+  .sb-head{height:82px!important}.event-brand{height:66px!important}
+}
+@media(prefers-reduced-motion:reduce){.cgpt-icon,.composer,.composer textarea,.openai-mark{animation:none!important;transition:none!important}.thinking-label i{animation:none!important}}
+
+</style>
+<link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <div class="brand event-brand" title="Business to Development"><img class="brand-logo" src="assets/img/logo.png" alt="Business to Development logo"></div>
+      <button class="icon-btn" id="collapseSide" title="Sidebar"><svg class="cgpt-icon icon-sidebar" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
+    </div>
+    <button class="new-chat" id="newChat"><svg class="cgpt-icon icon-compose" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 5H6.8A2.8 2.8 0 0 0 4 7.8v9.4A2.8 2.8 0 0 0 6.8 20h9.4a2.8 2.8 0 0 0 2.8-2.8v-6.7"/><g class="pen"><path d="m12 12 7.4-7.4a1.8 1.8 0 0 1 2.5 2.5L14.5 14.5 11 15z"/></g></svg><span>New project</span></button>
+    <div class="sb-scroll">
+      <button class="nav" id="searchBtn"><svg class="cgpt-icon icon-search" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.25"/><path d="m15.3 15.3 4.45 4.45"/></svg><span class="label">Search</span><span class="kbd" style="margin-left:auto">Ctrl K</span></button>
+      
+      
+      
+      
+      <div class="divider"></div>
+      <div class="section"><span>Pinned projects</span><button title="Manage pinned">•••</button></div>
+      <button class="side-row chat-link" data-title="AMH Bio 2026"><svg class="cgpt-icon icon-project" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.2A2.2 2.2 0 0 1 5.7 5h4.1l2 2.1h6.5a2.2 2.2 0 0 1 2.2 2.2v7.5a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z"/></svg><span class="label">AMH Bio 2026</span></button>
+      <button class="side-row chat-link" data-title="ترجمة وتحليل المهمة"><svg class="cgpt-icon icon-project" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.2A2.2 2.2 0 0 1 5.7 5h4.1l2 2.1h6.5a2.2 2.2 0 0 1 2.2 2.2v7.5a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z"/></svg><span class="label">ترجمة وتحليل المهمة</span></button>
+      <button class="side-row chat-link" data-title="تحسين دقة المشروع"><svg class="cgpt-icon icon-project" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.2A2.2 2.2 0 0 1 5.7 5h4.1l2 2.1h6.5a2.2 2.2 0 0 1 2.2 2.2v7.5a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z"/></svg><span class="label">تحسين دقة المشروع</span></button>
+      <button class="side-row chat-link" data-title="تقرير مراجعي عن المشروع"><svg class="cgpt-icon icon-project" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.2A2.2 2.2 0 0 1 5.7 5h4.1l2 2.1h6.5a2.2 2.2 0 0 1 2.2 2.2v7.5a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z"/></svg><span class="label">تقرير مراجعي عن المشروع</span></button>
+      <div class="section"><span>Recent projects</span><button id="clearRecent" title="Clear">×</button></div>
+      <div id="recentList"></div>
+    <button id="newProjectMini" class="hidden" aria-hidden="true" tabindex="-1"></button></div>
+    <div class="sb-foot"><button class="account" id="accountBtn"><div class="avatar">T</div><div class="acct-meta"><div class="acct-name">Tech Store</div><div class="badge">Plus</div></div><svg class="icon sm stroke" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></svg></button></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="top-left"><button class="icon-btn mobile-only" id="mobileMenu"><svg class="cgpt-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button></div>
+      <div class="top-right">
+        <button class="top-pill hide-sm" id="tempBtn" title="Temporary project"><svg class="cgpt-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11.8a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4.5v4.8h4.8"/><path d="M12 8v4l2.5 1.5"/></svg><span>Temporary</span></button>
+        <button class="top-pill hide-sm" id="shareBtn"><svg class="cgpt-icon icon-share" viewBox="0 0 24 24" aria-hidden="true"><g class="arrow"><path d="M12 14V4"/><path d="m8.5 7.5 3.5-3.5 3.5 3.5"/></g><path d="M6 11v7.2A1.8 1.8 0 0 0 7.8 20h8.4a1.8 1.8 0 0 0 1.8-1.8V11"/></svg><span>Share</span></button>
+        <button class="icon-btn" id="topMore" title="More"><svg class="cgpt-icon fill icon-more" viewBox="0 0 24 24" aria-hidden="true"><circle class="dot-a" cx="5" cy="12" r="1.35"/><circle class="dot-b" cx="12" cy="12" r="1.35"/><circle class="dot-c" cx="19" cy="12" r="1.35"/></svg></button>
+      </div>
+    </div>
+
+    <section class="content" id="content">
+      <div class="chat-shell" id="chatShell"><div class="home" id="home"><h1 class="greeting" id="greeting">Good to see you, Ahmed.</h1><div class="messages" id="messages"></div></div></div>
+
+      <div class="work-view hidden" id="workView"><h1>Work</h1><div class="work-sub">Long-running tasks, files, research, and deliverables in one workspace.</div><div class="work-grid">
+        <div class="work-card"><div class="plugin-icon"><svg class="icon stroke" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg></div><h3>Document</h3><p>Draft, revise, compare, and export structured documents.</p><button class="btn" data-work="document">Start</button></div>
+        <div class="work-card"><div class="plugin-icon"><svg class="icon stroke" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg></div><h3>Spreadsheet</h3><p>Analyze datasets, build tables, calculate, and create charts.</p><button class="btn" data-work="spreadsheet">Start</button></div>
+        <div class="work-card"><div class="plugin-icon"><svg class="icon stroke" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 8h10M7 12h6M12 18v3"/></svg></div><h3>Slides</h3><p>Build an outline, generate slide content, and package a deck.</p><button class="btn" data-work="slides">Start</button></div>
+        <div class="work-card"><div class="plugin-icon"><svg class="icon stroke" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg></div><h3>Research</h3><p>Gather sources, compare claims, track progress, and synthesize.</p><button class="btn" data-work="research">Start</button></div>
+        <div class="work-card"><div class="plugin-icon"><svg class="icon stroke" viewBox="0 0 24 24"><path d="M4 6h16v12H4zM8 10h8M8 14h5"/></svg></div><h3>Website</h3><p>Plan and generate a complete site workspace with checkpoints.</p><button class="btn" data-work="website">Start</button></div>
+        <div class="work-card"><div class="plugin-icon"><svg class="icon stroke" viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg></div><h3>Report</h3><p>Build repeatable reports from uploaded and connected sources.</p><button class="btn" data-work="report">Start</button></div>
+      </div><div class="job-panel"><strong>Recent work</strong><div class="job-row"><div class="grow"><div>Fleet access architecture review</div><small class="muted">Waiting for approval · permissions change</small><div class="progress"><i></i></div></div><button class="btn">Review</button></div><div class="job-row"><div class="grow"><div>Research brief: AI hackathons</div><small class="muted">Completed · 14 sources</small></div><button class="btn">Open</button></div></div></div>
+    </section>
+
+    <div class="composer-wrap" id="composerWrap"><div class="composer-stack">
+      <div class="follow-waiting" id="followWaiting"><span>Waiting for your answer</span><span>☷</span></div>
+      <button class="follow-resume" id="followResume">Resume follow-up questions</button>
+      <div class="followup" id="followup">
+        <div class="follow-head">
+          <div class="follow-title" id="followTitle">Need a few more details?</div>
+          <div class="follow-nav"><button id="followPrev" title="Previous">‹</button><span class="follow-progress" id="followProgress">1 of 1</span><button id="followNext" title="Next">›</button><button id="followClose" title="Close">×</button></div>
+        </div>
+        <div class="follow-content" id="followContent" dir="ltr">
+          <div class="follow-sub" id="followSub"></div>
+          <div class="follow-options" id="followOptions"></div>
+          <div class="custom-answer" id="customAnswer"><textarea id="customAnswerInput" placeholder="Write your own answer…"></textarea><div class="custom-actions"><button class="follow-btn ghost" id="customCancel">Cancel</button><button class="follow-btn primary" id="customSave">Use answer</button></div></div>
+          <div class="custom-answer" id="textAnswer"><textarea class="follow-textarea" id="textAnswerInput" placeholder="Type your answer…"></textarea></div>
+        </div>
+        <div class="follow-footer"><div class="follow-hint" id="followHint">Choose one option</div><div class="follow-footer-actions"><button class="follow-btn primary" id="followContinue">Continue</button><button class="follow-btn ghost" id="followSkip">Skip</button></div></div>
+      </div>
+      <div class="attach-tray" id="attachTray"></div><div class="tool-strip" id="toolStrip"></div>
+      <div class="composer" id="composer"><textarea id="prompt" placeholder="Message DevOps Assistant"></textarea><div class="composer-foot"><div class="c-left"><button class="circle" id="attachBtn" title="Add"><svg class="cgpt-icon icon-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button class="circle" id="toolsBtn"><svg class="cgpt-icon icon-tools" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h6M14 7h6M4 12h10M18 12h2M4 17h3M11 17h9"/><circle cx="12" cy="7" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="9" cy="17" r="2"/></svg><span class="mode-label" id="toolLabel">Tools</span></button></div><div class="c-right"><button class="circle" id="effortBtn"><span class="mode-label" id="effortLabel">Balanced</span><svg class="icon sm stroke" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></svg></button><button class="circle" id="voiceBtn" title="Voice"><svg class="cgpt-icon icon-mic" viewBox="0 0 24 24" aria-hidden="true"><rect class="mic-body" x="9" y="3.5" width="6" height="10" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg></button><button class="send" id="sendBtn" title="Send"><svg class="cgpt-icon icon-send" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18V6M7.5 10.5 12 6l4.5 4.5"/></svg></button></div></div></div>
+    </div></div>
+  </main>
+</div>
+
+<input type="file" id="fileInput" multiple class="hidden" />
+<input type="file" id="imageInput" accept="image/*" multiple class="hidden" />
+<div class="menu" id="attachMenu"><div class="menu-title">Add to your prompt</div><button data-add="files"><svg class="cgpt-icon icon-file" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h7l5 5V20a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 5 20V5a1.5 1.5 0 0 1 1-1.5Z"/><path d="M13 3.5V9h5"/></svg>Upload files</button><button data-add="images"><svg class="cgpt-icon icon-photo" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.7"/><path d="m5.5 17 4.8-4.8 3.2 3.2 2.2-2.2 2.8 2.8"/></svg>Add photos</button><button data-tool="web"><svg class="cgpt-icon icon-globe" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.35 3.5 5.2 3.5 8.5S14.3 18.15 12 20.5M12 3.5C9.7 5.85 8.5 8.7 8.5 12s1.2 6.15 3.5 8.5"/></svg>Search the web</button><button data-tool="deep"><svg class="cgpt-icon icon-research" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m14.6 14.6 4.2 4.2M10.5 7.5v6M7.5 10.5h6"/></svg>Deep research</button><button data-tool="image"><svg class="cgpt-icon icon-spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c.7 2.7 2 4 4.7 4.7C14 8.9 12.7 10.2 12 13c-.7-2.8-2-4.1-4.7-4.8C10 7.5 11.3 6.2 12 3.5Z"/><path d="M18.2 14.2c.35 1.4 1.05 2.1 2.3 2.45-1.25.35-1.95 1.05-2.3 2.35-.35-1.3-1.05-2-2.3-2.35 1.25-.35 1.95-1.05 2.3-2.45Z"/></svg>Create image</button><button data-tool="study"><svg class="cgpt-icon icon-book" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h4v16H7a2.5 2.5 0 0 0-2.5 2.5zM19.5 5.5A2.5 2.5 0 0 0 17 3h-4v16h4a2.5 2.5 0 0 1 2.5 2.5z"/></svg>Study & learn</button><div class="menu-sep"></div></div>
+<div class="menu" id="toolsMenu"><div class="menu-title">Tools</div><button data-tool="web">Web search<span class="right">Fresh sources</span></button><button data-tool="deep">Deep research<span class="right">Multi-step</span></button><button data-tool="image">Create image<span class="right">Visual</span></button><button data-tool="study">Study mode<span class="right">Interactive</span></button><button data-tool="code">Data analysis<span class="right">Files & code</span></button></div>
+<div class="menu" id="effortMenu"><div class="menu-title">Reasoning effort</div><button data-effort="Fast">Fast</button><button data-effort="Balanced">Balanced<span class="check">✓</span></button><button data-effort="High">High</button></div>
+<div class="menu" id="modelMenu"><div class="menu-title">Models</div><button data-model="DevOps AI">DevOps AI<span class="right">Default</span></button><button data-model="Nova Reason">Nova Reason<span class="right">Deeper reasoning</span></button><button data-model="Nova Fast">Nova Fast<span class="right">Low latency</span></button></div>
+<div class="menu" id="topMenu"><button id="renameChat">Rename project</button><button id="pinChat">Pin project</button><button id="branchChat">Branch project</button><button id="exportChat">Export project</button><div class="menu-sep"></div><button class="danger" id="deleteChat">Delete project</button></div>
+<div class="menu" id="accountMenu"><button data-open="settings">Settings</button><button data-open="memory">Memory</button><button data-open="customize">Customize assistant</button><div class="menu-sep"></div><button id="logoutDemo">Log out</button></div>
+<div class="menu" id="sideMoreMenu"><button id="followLabMenu">Follow-up test lab</button><button data-open="settings">Settings</button><button data-open="memory">Memory</button><button data-open="customize">Customize assistant</button><button id="keyboardBtn">Keyboard shortcuts</button></div>
+
+<div class="modal-wrap" id="modalWrap"><div class="modal" id="modal"><div class="modal-head"><h2 id="modalTitle">Modal</h2><button class="icon-btn" id="modalClose">×</button></div><div id="modalTabs" class="tabs hidden"></div><div class="modal-body" id="modalBody"></div><div class="modal-foot hidden" id="modalFoot"></div></div></div>
+<div class="case-lab-wrap" id="caseLabWrap"><div class="case-lab">
+  <div class="case-lab-head"><div><h2>Follow-up test lab</h2><p>Launch each state independently. Nothing here needs a backend.</p></div><button class="icon-btn" id="caseLabClose">×</button></div>
+  <div class="case-grid" id="caseGrid"></div>
+  <div class="case-lab-foot">Includes: direct answer, single question, multi-step, custom write-in, text-only, multi-select, required/no-skip, long RTL, branching, skip, back/next, close + resume, and answer persistence.</div>
+</div></div>
+
+<div class="voice-screen" id="voiceScreen"><div class="orb"><div class="orb-core"><svg class="cgpt-icon icon-mic" viewBox="0 0 24 24" aria-hidden="true"><rect class="mic-body" x="9" y="3.5" width="6" height="10" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></svg></div></div><div class="voice-label" id="voiceLabel">Listening…</div><div class="voice-sub">Speak naturally. Your transcript will be added to the composer.</div><div class="voice-controls"><button id="voiceMute"><svg class="cgpt-icon icon-mute" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9.5v1.7a3 3 0 0 0 4.8 2.4M15 9V6.5a3 3 0 0 0-5.6-1.5M5.5 11a6.5 6.5 0 0 0 10.8 4.8M12 18v3M9 21h6M4 4l16 16"/></svg></button><button class="end" id="voiceEnd"><svg class="cgpt-icon icon-end" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div></div>
+<div class="toast" id="toast"></div>
+
+<script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>

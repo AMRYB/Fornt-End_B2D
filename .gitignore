@@ -1,0 +1,28 @@
+# Secrets — never commit real credentials
+.env
+*.env
+!.env.example
+
+# Runtime data (per-project JSON, runs, rendered artifacts)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Test / tooling caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.vercel
+.env*
+!.env.example
