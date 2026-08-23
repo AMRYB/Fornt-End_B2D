@@ -9,6 +9,27 @@ const STAGES = [
 ];
 
 const SUPABASE_ESM_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/+esm';
+const MERMAID_ESM_URL = 'https://cdn.jsdelivr.net/npm/mermaid@11.17.0/dist/mermaid.esm.min.mjs';
+
+const STAGE_ACTIVITY = {
+  discovery: 'Understanding the idea, capturing confirmed details, and resolving gaps.',
+  requirements: 'Structuring functional requirements, user stories, constraints, and acceptance criteria.',
+  architecture: 'Designing system boundaries, communication, security, and the deployment topology.',
+  database: 'Modeling entities, relationships, indexes, constraints, and the SQL foundation.',
+  api: 'Defining endpoints, authentication, schemas, validation, and error contracts.',
+  devops: 'Preparing containers, CI/CD, environments, health checks, logging, and monitoring.',
+  review: 'Checking every artifact for completeness, consistency, security, and deployability.'
+};
+
+const STAGE_STATE_CLASSES = ['pending', 'running', 'done', 'failed'];
+const DOCKER_INSTRUCTIONS = new Set([
+  'ADD', 'ARG', 'CMD', 'COPY', 'ENTRYPOINT', 'ENV', 'EXPOSE', 'FROM',
+  'HEALTHCHECK', 'LABEL', 'MAINTAINER', 'ONBUILD', 'RUN', 'SHELL',
+  'STOPSIGNAL', 'USER', 'VOLUME', 'WORKDIR'
+]);
+
+let mermaidRendererPromise = null;
+let mermaidRenderSequence = 0;
 
 const RESULT_TABS = [
   { id: 'overview', label: 'Overview' },
@@ -40,7 +61,10 @@ const state = {
   follow: null,
   search: '',
   bannerTimer: null,
-  pendingIdempotencyKeys: new Map()
+  pendingIdempotencyKeys: new Map(),
+  stageVisualProjectId: null,
+  stageVisualStates: null,
+  generationActivityPhase: 'idle'
 };
 
 function node(tag, className, text) {
@@ -77,6 +101,37 @@ function textValue(value) {
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'string' || typeof value === 'number') return String(value);
   return JSON.stringify(value, null, 2);
+}
+
+function isKnownInformationKey(key) {
+  return String(key || '').replace(/[^a-z0-9]/gi, '').toLowerCase() === 'knowninformation';
+}
+
+function withoutKnownInformation(value) {
+  if (!isObject(value)) return value;
+  return Object.fromEntries(
+    Object.entries(value).filter(([key]) => !isKnownInformationKey(key))
+  );
+}
+
+function structuredTextValue(value) {
+  if (typeof value !== 'string') return value;
+  const candidate = value.trim().replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+  if (!candidate.startsWith('{')) return value;
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    return value;
+  }
+}
+
+function userFacingAgentMessage(value) {
+  const parsed = structuredTextValue(value);
+  if (!isObject(parsed) || !Object.keys(parsed).some(isKnownInformationKey)) return String(value ?? '');
+  const summary = parsed.summary || parsed.message || parsed.response;
+  if (typeof summary === 'string' && summary.trim()) return summary.trim();
+  const cleaned = withoutKnownInformation(parsed);
+  return hasValue(cleaned) ? JSON.stringify(cleaned, null, 2) : 'Known information updated.';
 }
 
 function formatDate(value) {
@@ -569,7 +624,7 @@ function renderTranscript(project) {
     const role = String(turn.role || '').toLowerCase();
     const message = turn.message ?? turn.text ?? turn.content ?? '';
     if (role === 'user') addUser(message, turn.timestamp || turn.created_at);
-    else addAssistant(message, { timestamp: turn.timestamp || turn.created_at });
+    else addAssistant(userFacingAgentMessage(message), { timestamp: turn.timestamp || turn.created_at });
   });
   if (!transcript.length && project?.business_idea) addUser(project.business_idea, project.created_at);
   setChatStarted(Boolean(project));
@@ -661,6 +716,9 @@ function resetProject({ updateUrl = true } = {}) {
   state.follow = null;
   state.activeTab = 'overview';
   state.workflowRunning = false;
+  state.stageVisualProjectId = null;
+  state.stageVisualStates = null;
+  state.generationActivityPhase = 'idle';
   clear($('#messages'));
   hideFollow();
   renderActionBar();
@@ -1077,40 +1135,218 @@ function progressMessage(project = state.project, event = null) {
   return 'Discovery is gathering the information the engineering agents need.';
 }
 
-function buildStageStrip(project = state.project, event = null) {
+function buildStageStrip() {
   const strip = node('div', 'stage-strip');
-  const states = inferStageStates(project, event);
-  STAGES.forEach(stage => {
-    const item = node('div', `stage-pill ${states[stage.id]}`);
-    item.append(node('div', 'stage-dot'), node('span', '', stage.label));
-    item.title = `${stage.label}: ${labelFor(states[stage.id])}`;
+  strip.setAttribute('role', 'list');
+  strip.setAttribute('aria-label', 'Seven-agent workflow checkpoints');
+  STAGES.forEach((stage, index) => {
+    const item = node('div', 'stage-pill pending');
+    item.dataset.stage = stage.id;
+    item.setAttribute('role', 'listitem');
+    const dot = node('div', 'stage-dot');
+    dot.append(
+      node('span', 'checkpoint-number', index + 1),
+      node('span', 'checkpoint-check', '✓')
+    );
+    item.append(dot, node('span', 'stage-label', stage.label));
     strip.append(item);
   });
   return strip;
 }
 
-function renderProgress(event = null) {
-  const container = clear($('#resultsProgress'));
-  if (!container) return;
-  const message = node('div', 'progress-message');
-  message.append(node('span', '', progressMessage(state.project, event)), node('span', '', state.project ? labelFor(state.project.status || 'discovery') : 'New project'));
-  container.append(message, buildStageStrip(state.project, event));
+function animateCheckpoint(item, className) {
+  item.classList.remove('just-completed', 'just-started', 'just-failed');
+  void item.offsetWidth;
+  item.classList.add(className);
+  window.setTimeout(() => item.classList.remove(className), 950);
+}
 
-  let chatCard = $('#generationCard');
-  if (state.project?.status === 'generating' || state.workflowRunning) {
-    if (!chatCard) {
-      chatCard = node('div', 'generation-card');
-      chatCard.id = 'generationCard';
-      $('#messages')?.append(chatCard);
+function updateStageStrip(strip, states, previousStates = null) {
+  STAGES.forEach(stage => {
+    const item = strip.querySelector(`[data-stage="${stage.id}"]`);
+    if (!item) return;
+    const current = states[stage.id] || 'pending';
+    const previous = item.dataset.state || previousStates?.[stage.id] || current;
+    item.classList.remove(...STAGE_STATE_CLASSES);
+    item.classList.add(current);
+    item.dataset.state = current;
+    item.title = `${stage.label}: ${labelFor(current)}`;
+    item.setAttribute('aria-label', `${stage.label}: ${labelFor(current)}`);
+    if (previous !== current) {
+      if (current === 'done') animateCheckpoint(item, 'just-completed');
+      else if (current === 'running') animateCheckpoint(item, 'just-started');
+      else if (current === 'failed') animateCheckpoint(item, 'just-failed');
     }
-    clear(chatCard);
+  });
+  strip.dataset.completed = String(Object.values(states).filter(value => value === 'done').length);
+}
+
+function stageLabels(ids) {
+  return ids.map(id => STAGES.find(stage => stage.id === id)?.label || labelFor(id));
+}
+
+function workflowActivity(states, event = null) {
+  const project = state.project;
+  const completed = STAGES.filter(stage => states[stage.id] === 'done');
+  const running = STAGES.filter(stage => states[stage.id] === 'running').map(stage => stage.id);
+  const completedNow = Array.isArray(event?.completed_now)
+    ? event.completed_now.map(stageId).filter(id => STAGES.some(stage => stage.id === id))
+    : [];
+  const counter = `${completed.length} of ${STAGES.length} checkpoints saved`;
+
+  if (!project) {
+    return { tone: 'waiting', badge: 'Waiting', title: 'Start with your business idea', detail: STAGE_ACTIVITY.discovery, counter };
+  }
+  if (TERMINAL_STATUSES.has(project.status)) {
+    return {
+      tone: project.status === 'needs_attention' ? 'failed' : 'complete',
+      badge: project.status === 'needs_attention' ? 'Review' : 'Ready',
+      title: project.status === 'needs_attention' ? 'The review needs attention' : 'The blueprint is ready',
+      detail: project.status === 'needs_attention'
+        ? 'The workflow stopped safely with review findings available in the Review tab.'
+        : 'Every agent checkpoint is saved and the cross-artifact review is complete.',
+      counter
+    };
+  }
+  if (!state.workflowRunning && project.status === 'generating') {
+    return {
+      tone: state.generationActivityPhase === 'failed' ? 'failed' : 'waiting',
+      badge: state.generationActivityPhase === 'failed' ? 'Paused' : 'Resume',
+      title: state.generationActivityPhase === 'failed' ? 'The current checkpoint paused safely' : 'Generation is waiting to continue',
+      detail: 'The saved workflow can resume from the next unfinished agent without repeating completed checkpoints.',
+      counter
+    };
+  }
+  if (state.generationActivityPhase === 'starting') {
+    return { tone: 'working', badge: 'Starting', title: 'Preparing the agent workflow', detail: 'Loading the confirmed discovery context and opening the first engineering checkpoint.', counter };
+  }
+  if (state.generationActivityPhase === 'transitioning' && completedNow.length) {
+    const finished = stageLabels(completedNow).join(' + ');
+    const next = stageLabels(running).join(' + ');
+    return {
+      tone: 'transitioning',
+      badge: 'Saved',
+      title: `${finished} checkpoint saved`,
+      detail: next ? `Moving to ${next}. The next agent receives the saved upstream output.` : 'Moving to the final workflow state.',
+      counter
+    };
+  }
+  if (running.length) {
+    const labels = stageLabels(running);
+    return {
+      tone: 'working',
+      badge: 'Live',
+      title: `${labels.join(' + ')} ${running.length > 1 ? 'agents' : 'agent'}`,
+      detail: running.map(id => STAGE_ACTIVITY[id]).join(' '),
+      counter
+    };
+  }
+  if (project.status === 'confirmed') {
+    return { tone: 'waiting', badge: 'Ready', title: 'Waiting to generate', detail: 'Discovery is confirmed. Start generation when you are ready.', counter };
+  }
+  if (project.status === 'ready_for_confirmation') {
+    return { tone: 'waiting', badge: 'Confirm', title: 'Discovery checkpoint is ready', detail: 'Review the known information and confirm it before engineering begins.', counter };
+  }
+  return { tone: 'working', badge: 'Live', title: 'Discovery agent', detail: STAGE_ACTIVITY.discovery, counter };
+}
+
+function renderAgentActivity(container, states, event = null) {
+  const activity = workflowActivity(states, event);
+  clear(container);
+  container.className = `agent-activity ${activity.tone}`;
+  container.setAttribute('aria-live', 'polite');
+
+  const head = node('div', 'activity-head');
+  const label = node('div', 'activity-label');
+  label.append(node('i', 'activity-signal'), node('span', '', 'Agent activity'));
+  head.append(label, node('span', 'activity-badge', activity.badge));
+
+  const copy = node('div', 'activity-copy');
+  copy.append(node('strong', '', activity.title), node('p', '', activity.detail));
+
+  const motion = node('div', 'activity-motion');
+  motion.setAttribute('aria-hidden', 'true');
+  motion.append(node('i'), node('i'), node('i'));
+
+  container.append(head, copy, motion, node('div', 'activity-counter', activity.counter));
+}
+
+function ensureProgressSurface(container, { chat = false } = {}) {
+  let layout = container.querySelector('.workflow-progress-layout');
+  if (layout) {
+    return {
+      copy: layout.querySelector('[data-progress-copy]'),
+      status: layout.querySelector('[data-progress-status]'),
+      strip: layout.querySelector('.stage-strip'),
+      activity: layout.querySelector('.agent-activity')
+    };
+  }
+
+  clear(container);
+  layout = node('div', 'workflow-progress-layout');
+  const main = node('div', 'workflow-progress-main');
+  if (chat) {
     const head = node('div', 'generation-head');
-    head.append(node('strong', '', 'Seven-agent progress'), node('span', '', progressMessage(state.project, event)));
-    chatCard.append(head, buildStageStrip(state.project, event));
+    const copy = node('span');
+    copy.dataset.progressCopy = '';
+    head.append(node('strong', '', 'Seven-agent progress'), copy);
+    main.append(head);
+  } else {
+    const message = node('div', 'progress-message');
+    const copy = node('span');
+    copy.dataset.progressCopy = '';
+    const status = node('span');
+    status.dataset.progressStatus = '';
+    message.append(copy, status);
+    main.append(message);
+  }
+  main.append(buildStageStrip());
+  const activity = node('aside', 'agent-activity');
+  layout.append(main, activity);
+  container.append(layout);
+  return {
+    copy: layout.querySelector('[data-progress-copy]'),
+    status: layout.querySelector('[data-progress-status]'),
+    strip: layout.querySelector('.stage-strip'),
+    activity
+  };
+}
+
+function updateProgressSurface(container, states, previousStates, event, options = {}) {
+  const surface = ensureProgressSurface(container, options);
+  surface.copy.textContent = progressMessage(state.project, event);
+  if (surface.status) surface.status.textContent = state.project ? labelFor(state.project.status || 'discovery') : 'New project';
+  updateStageStrip(surface.strip, states, previousStates);
+  renderAgentActivity(surface.activity, states, event);
+}
+
+function renderProgress(event = null) {
+  const container = $('#resultsProgress');
+  if (!container) return;
+  const projectId = state.project?.project_id || null;
+  const sameProject = projectId && state.stageVisualProjectId === projectId;
+  const previousStates = sameProject ? state.stageVisualStates : null;
+  const states = inferStageStates(state.project, event);
+  updateProgressSurface(container, states, previousStates, event);
+
+  let workspace = $('#generationWorkspace');
+  if (state.project?.status === 'generating' || state.workflowRunning) {
+    if (!workspace) {
+      workspace = node('div', 'generation-workspace');
+      workspace.id = 'generationWorkspace';
+      const chatCard = node('div', 'generation-card');
+      chatCard.id = 'generationCard';
+      workspace.append(chatCard);
+      $('#messages')?.append(workspace);
+    }
+    updateProgressSurface($('#generationCard'), states, previousStates, event, { chat: true });
     scrollBottom();
   } else {
-    chatCard?.remove();
+    workspace?.remove();
   }
+
+  state.stageVisualProjectId = projectId;
+  state.stageVisualStates = { ...states };
 }
 
 function eventContainsProject(payload) {
@@ -1132,6 +1368,7 @@ async function refreshActiveProject() {
 async function runGeneration({ initialize }) {
   if (!state.project || state.workflowRunning || state.busy) return;
   state.workflowRunning = true;
+  state.generationActivityPhase = initialize ? 'starting' : 'working';
   setBusy(true);
   switchView('results');
   renderActionBar();
@@ -1142,6 +1379,7 @@ async function runGeneration({ initialize }) {
       lastEvent = await api(projectEndpoint(state.project.project_id, '/generate'), { method: 'POST' });
       if (eventContainsProject(lastEvent)) state.project = normalizeProject(lastEvent);
       else state.project = { ...state.project, status: 'generating', generation: lastEvent?.generation || state.project.generation };
+      state.generationActivityPhase = 'working';
       renderProject();
       switchView('results');
     }
@@ -1149,6 +1387,8 @@ async function runGeneration({ initialize }) {
     let complete = generationComplete(lastEvent);
     for (let step = 0; !complete && step < 24; step += 1) {
       const stageScope = state.project?.generation?.next_stage || `step-${step}`;
+      state.generationActivityPhase = 'working';
+      renderProgress(lastEvent);
       lastEvent = await idempotentApi(
         projectEndpoint(state.project.project_id, '/generation/next'),
         { method: 'POST' },
@@ -1157,10 +1397,11 @@ async function runGeneration({ initialize }) {
       if (eventContainsProject(lastEvent)) state.project = normalizeProject(lastEvent);
       else await refreshActiveProject();
       complete = generationComplete(lastEvent) || TERMINAL_STATUSES.has(state.project?.status);
+      state.generationActivityPhase = complete ? 'complete' : 'transitioning';
       renderProject();
       switchView('results');
       renderProgress(lastEvent);
-      if (!complete) await sleep(180);
+      await sleep(650);
     }
     if (!complete) throw new Error('Generation paused after the safety limit. You can resume it from this project.');
     await refreshActiveProject();
@@ -1169,12 +1410,16 @@ async function runGeneration({ initialize }) {
     switchView('results');
     showBanner(state.project.status === 'needs_attention' ? 'Blueprint generated with review issues.' : 'Blueprint generation completed.', state.project.status === 'needs_attention' ? 'error' : 'success');
   } catch (error) {
+    state.generationActivityPhase = 'failed';
     try { await refreshActiveProject(); } catch { /* preserve the last visible state */ }
     renderProject();
     switchView('results');
     showBanner(readableError(error), 'error', true);
   } finally {
     state.workflowRunning = false;
+    if (state.generationActivityPhase !== 'failed') {
+      state.generationActivityPhase = TERMINAL_STATUSES.has(state.project?.status) ? 'complete' : 'idle';
+    }
     setBusy(false);
     renderActionBar();
     renderProgress(lastEvent);
@@ -1269,7 +1514,86 @@ function appendKeyValues(container, values, { redactSecrets = false } = {}) {
   container.append(list);
 }
 
-function codeBlock(content, label = 'Code') {
+function appendSyntaxToken(container, value, className = '') {
+  if (!value) return;
+  if (!className) {
+    container.append(document.createTextNode(value));
+    return;
+  }
+  container.append(node('span', className, value));
+}
+
+function appendInlineCodeTokens(container, value) {
+  const source = String(value || '');
+  const pattern = /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#[^\n]*|\$\{[A-Za-z_][A-Za-z0-9_]*\}|\$[A-Za-z_][A-Za-z0-9_]*|--[A-Za-z0-9][A-Za-z0-9_-]*|\b(?:true|false|null|yes|no|on|off)\b|\b\d+(?:\.\d+)*\b|&&|\|\||\\$)/gi;
+  let cursor = 0;
+  for (const match of source.matchAll(pattern)) {
+    appendSyntaxToken(container, source.slice(cursor, match.index));
+    const token = match[0];
+    let className = 'syntax-operator';
+    if (token.startsWith('#')) className = 'syntax-comment';
+    else if (token.startsWith('"') || token.startsWith("'")) className = 'syntax-string';
+    else if (token.startsWith('$')) className = 'syntax-variable';
+    else if (token.startsWith('--')) className = 'syntax-flag';
+    else if (/^\d/.test(token)) className = 'syntax-number';
+    else if (/^(?:true|false|null|yes|no|on|off)$/i.test(token)) className = 'syntax-boolean';
+    appendSyntaxToken(container, token, className);
+    cursor = match.index + token.length;
+  }
+  appendSyntaxToken(container, source.slice(cursor));
+}
+
+function highlightedDockerfile(content) {
+  const code = node('code', 'syntax-code language-dockerfile');
+  String(content ?? '').split('\n').forEach((line, index, lines) => {
+    if (/^\s*#/.test(line)) {
+      appendSyntaxToken(code, line, 'syntax-comment');
+    } else {
+      const match = line.match(/^(\s*)([A-Za-z]+)(\s*)(.*)$/);
+      const instruction = match?.[2]?.toUpperCase();
+      if (match && DOCKER_INSTRUCTIONS.has(instruction)) {
+        appendSyntaxToken(code, match[1]);
+        appendSyntaxToken(code, match[2], 'syntax-instruction');
+        appendSyntaxToken(code, match[3]);
+        appendInlineCodeTokens(code, match[4]);
+      } else {
+        appendInlineCodeTokens(code, line);
+      }
+    }
+    if (index < lines.length - 1) code.append(document.createTextNode('\n'));
+  });
+  return code;
+}
+
+function highlightedYaml(content) {
+  const code = node('code', 'syntax-code language-yaml');
+  String(content ?? '').split('\n').forEach((line, index, lines) => {
+    if (/^\s*#/.test(line)) {
+      appendSyntaxToken(code, line, 'syntax-comment');
+    } else {
+      const match = line.match(/^(\s*)(-\s+)?([A-Za-z0-9_.-]+)(\s*:)(.*)$/);
+      if (match) {
+        appendSyntaxToken(code, match[1]);
+        appendSyntaxToken(code, match[2] || '', 'syntax-operator');
+        appendSyntaxToken(code, match[3], 'syntax-key');
+        appendSyntaxToken(code, match[4], 'syntax-operator');
+        appendInlineCodeTokens(code, match[5]);
+      } else {
+        appendInlineCodeTokens(code, line);
+      }
+    }
+    if (index < lines.length - 1) code.append(document.createTextNode('\n'));
+  });
+  return code;
+}
+
+function highlightedCode(content, language) {
+  if (language === 'dockerfile') return highlightedDockerfile(content);
+  if (language === 'yaml') return highlightedYaml(content);
+  return node('code', `syntax-code language-${language || 'plain'}`, String(content ?? ''));
+}
+
+function codeBlock(content, label = 'Code', { language = 'plain' } = {}) {
   const block = node('div', 'code-block');
   const toolbar = node('div', 'code-toolbar');
   toolbar.append(node('span', '', label));
@@ -1286,9 +1610,133 @@ function codeBlock(content, label = 'Code') {
   });
   toolbar.append(copy);
   const pre = node('pre');
-  pre.textContent = String(content ?? '');
+  pre.append(highlightedCode(content, language));
   block.append(toolbar, pre);
   return block;
+}
+
+function normalizeMermaidSource(value) {
+  let source = String(value || '').trim();
+  source = source.replace(/^```(?:mermaid)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const lines = source.split(/\r?\n/);
+  if (lines[0]?.trim().toLowerCase() === 'mermaid') lines.shift();
+  return lines.join('\n').trim();
+}
+
+function loadMermaidRenderer() {
+  if (!mermaidRendererPromise) {
+    mermaidRendererPromise = import(MERMAID_ESM_URL).then(module => {
+      const mermaid = module.default || module;
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: 'strict',
+        theme: 'base',
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        flowchart: { htmlLabels: false, useMaxWidth: true },
+        themeVariables: {
+          background: '#ffffff',
+          primaryColor: '#eef9fc',
+          primaryTextColor: '#084c75',
+          primaryBorderColor: '#00a2c8',
+          secondaryColor: '#fff5d9',
+          secondaryTextColor: '#084c75',
+          secondaryBorderColor: '#ffca33',
+          tertiaryColor: '#fbf0f6',
+          tertiaryTextColor: '#084c75',
+          tertiaryBorderColor: '#9e1f63',
+          lineColor: '#084c75',
+          edgeLabelBackground: '#ffffff',
+          clusterBkg: '#f4f8fa',
+          clusterBorder: '#bfd2dd'
+        }
+      });
+      return mermaid;
+    }).catch(error => {
+      mermaidRendererPromise = null;
+      throw error;
+    });
+  }
+  return mermaidRendererPromise;
+}
+
+function safeMermaidSvg(svgText, label) {
+  const parsed = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+  if (parsed.querySelector('parsererror')) throw new Error('Invalid Mermaid SVG');
+  const svg = parsed.documentElement;
+  if (svg.localName !== 'svg' || svg.namespaceURI !== 'http://www.w3.org/2000/svg') throw new Error('Unexpected Mermaid output');
+
+  // Mermaid may use foreignObject for node labels even when htmlLabels is
+  // disabled. Rebuild those labels from plain text so generated markup cannot
+  // execute while the diagram remains readable.
+  svg.querySelectorAll('foreignObject').forEach(element => {
+    const text = String(element.textContent || '').replace(/\s+/g, ' ').trim();
+    while (element.firstChild) element.firstChild.remove();
+    const safeLabel = parsed.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+    safeLabel.setAttribute('class', 'safe-mermaid-label');
+    safeLabel.textContent = text;
+    element.append(safeLabel);
+  });
+  svg.querySelectorAll('script, iframe, object, embed, audio, video').forEach(element => element.remove());
+  svg.querySelectorAll('style').forEach(style => {
+    if (/@import|url\s*\(\s*['"]?(?:https?:|data:|javascript:)/i.test(style.textContent || '')) style.remove();
+  });
+  [svg, ...svg.querySelectorAll('*')].forEach(element => {
+    [...element.attributes].forEach(attribute => {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value.trim();
+      if (name.startsWith('on') || /javascript:|data:text\/html|expression\s*\(/i.test(value)) {
+        element.removeAttribute(attribute.name);
+        return;
+      }
+      if ((name === 'href' || name === 'xlink:href') && value && !value.startsWith('#')) {
+        element.removeAttribute(attribute.name);
+      }
+    });
+  });
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', label);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  return document.importNode(svg, true);
+}
+
+async function renderMermaidDiagram(container, source, label) {
+  const requestId = String(++mermaidRenderSequence);
+  container.dataset.renderRequest = requestId;
+  container.className = 'mermaid-canvas loading';
+  const loading = node('div', 'diagram-loading');
+  loading.append(node('i'), node('span', '', 'Rendering architecture diagram…'));
+  clear(container).append(loading);
+  try {
+    const normalized = normalizeMermaidSource(source);
+    if (!normalized) throw new Error('Empty Mermaid source');
+    const mermaid = await loadMermaidRenderer();
+    await mermaid.parse(normalized);
+    const renderId = `b2d-architecture-${Date.now()}-${mermaidRenderSequence}`;
+    const result = await mermaid.render(renderId, normalized);
+    if (!container.isConnected || container.dataset.renderRequest !== requestId) return;
+    const svg = safeMermaidSvg(result.svg, label);
+    container.className = 'mermaid-canvas ready';
+    clear(container).append(svg);
+  } catch {
+    if (!container.isConnected || container.dataset.renderRequest !== requestId) return;
+    container.className = 'mermaid-canvas failed';
+    const error = node('div', 'diagram-error');
+    error.append(node('strong', '', 'The architecture diagram could not be rendered.'), node('span', '', 'The generated Mermaid syntax may need another pass.'));
+    const retry = node('button', '', 'Retry diagram');
+    retry.type = 'button';
+    retry.addEventListener('click', () => renderMermaidDiagram(container, source, label));
+    error.append(retry);
+    clear(container).append(error);
+  }
+}
+
+function mermaidDiagramCard(title, source) {
+  const card = resultCard(title, { full: true });
+  card.classList.add('architecture-diagram-card');
+  const canvas = node('div', 'mermaid-canvas loading');
+  card.append(canvas);
+  requestAnimationFrame(() => renderMermaidDiagram(canvas, source, title));
+  return card;
 }
 
 function genericSection(title, value) {
@@ -1313,9 +1761,12 @@ function renderOverview(panel) {
   }
   const grid = resultGrid();
   appendTextCard(grid, 'Business idea', project.business_idea, { full: true });
-  if (typeof project.summary === 'string') appendTextCard(grid, 'Discovery summary', project.summary, { full: true });
-  else Object.entries(project.summary || {}).forEach(([key, value]) => {
+  const summary = withoutKnownInformation(structuredTextValue(project.summary));
+  if (typeof summary === 'string') appendTextCard(grid, 'Discovery summary', summary, { full: true });
+  else Object.entries(summary || {}).forEach(([key, value]) => {
+    if (isKnownInformationKey(key)) return;
     if (Array.isArray(value)) appendListCard(grid, labelFor(key), value);
+    else if (isObject(value)) grid.append(genericSection(labelFor(key), value));
     else appendTextCard(grid, labelFor(key), value);
   });
   const known = project.known_information || {};
@@ -1324,7 +1775,9 @@ function renderOverview(panel) {
     appendKeyValues(card, known);
     grid.append(card);
   }
-  if (hasValue(project.discovery?.summary)) appendTextCard(grid, 'Agent summary', project.discovery.summary, { full: true });
+  const agentSummary = withoutKnownInformation(structuredTextValue(project.discovery?.summary));
+  if (typeof agentSummary === 'string' && hasValue(agentSummary)) appendTextCard(grid, 'Agent summary', agentSummary, { full: true });
+  else if (hasValue(agentSummary)) grid.append(genericSection('Agent summary', agentSummary));
   if (!grid.children.length) grid.append(resultEmpty('Discovery has not produced structured information yet.'));
   panel.append(grid);
 }
@@ -1351,6 +1804,9 @@ function renderArchitecture(panel, architecture) {
     return;
   }
   const grid = resultGrid();
+  const mermaid = architecture.mermaid_diagram || architecture.diagram;
+  if (mermaid) grid.append(mermaidDiagramCard('Architecture diagram', mermaid));
+
   const components = architecture.system_components || architecture.components;
   if (Array.isArray(components) && components.length) {
     const card = resultCard('System components', { full: true });
@@ -1374,12 +1830,6 @@ function renderArchitecture(panel, architecture) {
   ['communication', 'security', 'scalability'].forEach(key => appendListCard(grid, labelFor(key), architecture[key]));
   appendTextCard(grid, 'Authentication', architecture.authentication);
   appendTextCard(grid, 'Deployment architecture', architecture.deployment_architecture, { full: true });
-  const mermaid = architecture.mermaid_diagram || architecture.diagram;
-  if (mermaid) {
-    const card = resultCard('Architecture diagram · Mermaid source', { full: true });
-    card.append(codeBlock(mermaid, 'Mermaid · rendered as safe text'));
-    grid.append(card);
-  }
   const handled = new Set(['system_components', 'components', 'technology_stack', 'communication', 'security', 'scalability', 'authentication', 'deployment_architecture', 'mermaid_diagram', 'diagram']);
   Object.entries(architecture).filter(([key, value]) => !handled.has(key) && hasValue(value)).forEach(([key, value]) => grid.append(genericSection(labelFor(key), value)));
   panel.append(grid);
@@ -1497,15 +1947,15 @@ function renderDevops(panel, devops) {
   }
   const grid = resultGrid();
   const codeFields = [
-    ['dockerfile', 'Dockerfile'],
-    ['docker_compose', 'Docker Compose'],
-    ['ci_cd_pipeline', 'CI/CD pipeline'],
-    ['github_actions', 'GitHub Actions']
+    ['dockerfile', 'Dockerfile', 'dockerfile'],
+    ['docker_compose', 'Docker Compose', 'yaml'],
+    ['ci_cd_pipeline', 'CI/CD pipeline', 'yaml'],
+    ['github_actions', 'GitHub Actions', 'yaml']
   ];
-  codeFields.forEach(([key, title]) => {
+  codeFields.forEach(([key, title, language]) => {
     if (!hasValue(devops[key])) return;
     const card = resultCard(title, { full: true });
-    card.append(codeBlock(devops[key], title));
+    card.append(codeBlock(devops[key], title, { language }));
     grid.append(card);
   });
   if (hasValue(devops.environment_variables)) {
