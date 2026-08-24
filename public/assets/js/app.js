@@ -11,16 +11,6 @@ const STAGES = [
 const SUPABASE_ESM_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/+esm';
 const MERMAID_ESM_URL = 'https://cdn.jsdelivr.net/npm/mermaid@11.17.0/dist/mermaid.esm.min.mjs';
 
-const STAGE_ACTIVITY = {
-  discovery: 'Understanding the idea, capturing confirmed details, and resolving gaps.',
-  requirements: 'Structuring functional requirements, user stories, constraints, and acceptance criteria.',
-  architecture: 'Designing system boundaries, communication, security, and the deployment topology.',
-  database: 'Modeling entities, relationships, indexes, constraints, and the SQL foundation.',
-  api: 'Defining endpoints, authentication, schemas, validation, and error contracts.',
-  devops: 'Preparing containers, CI/CD, environments, health checks, logging, and monitoring.',
-  review: 'Checking every artifact for completeness, consistency, security, and deployability.'
-};
-
 const STAGE_STATE_CLASSES = ['pending', 'running', 'done', 'failed'];
 const DOCKER_INSTRUCTIONS = new Set([
   'ADD', 'ARG', 'CMD', 'COPY', 'ENTRYPOINT', 'ENV', 'EXPOSE', 'FROM',
@@ -63,8 +53,8 @@ const state = {
   bannerTimer: null,
   pendingIdempotencyKeys: new Map(),
   stageVisualProjectId: null,
-  stageVisualStates: null,
-  generationActivityPhase: 'idle'
+  stageVisualStates: null
+  };
 };
 
 function node(tag, className, text) {
@@ -131,7 +121,7 @@ function userFacingAgentMessage(value) {
   const summary = parsed.summary || parsed.message || parsed.response;
   if (typeof summary === 'string' && summary.trim()) return summary.trim();
   const cleaned = withoutKnownInformation(parsed);
-  return hasValue(cleaned) ? JSON.stringify(cleaned, null, 2) : 'Known information updated.';
+  return hasValue(cleaned) ? JSON.stringify(cleaned, null, 2) : 'Discovery details updated.';
 }
 
 function formatDate(value) {
@@ -718,7 +708,6 @@ function resetProject({ updateUrl = true } = {}) {
   state.workflowRunning = false;
   state.stageVisualProjectId = null;
   state.stageVisualStates = null;
-  state.generationActivityPhase = 'idle';
   clear($('#messages'));
   hideFollow();
   renderActionBar();
@@ -949,7 +938,7 @@ function renderActionBar() {
   const discoveryReady = isDiscoveryReadyForConfirmation(project);
   if (discoveryReady) {
     title.textContent = 'Discovery is ready for your approval';
-    description.textContent = 'Review the known information, then confirm it before the engineering agents start.';
+    description.textContent = 'Review the discovery details, then confirm them before the engineering agents start.';
     actions.append(actionButton('Review information', () => { state.activeTab = 'overview'; switchView('results'); }), actionButton('Confirm information', confirmDiscovery, true));
     bar.classList.add('show');
   } else if (project.status === 'confirmed') {
@@ -1185,100 +1174,13 @@ function stageLabels(ids) {
   return ids.map(id => STAGES.find(stage => stage.id === id)?.label || labelFor(id));
 }
 
-function workflowActivity(states, event = null) {
-  const project = state.project;
-  const completed = STAGES.filter(stage => states[stage.id] === 'done');
-  const running = STAGES.filter(stage => states[stage.id] === 'running').map(stage => stage.id);
-  const completedNow = Array.isArray(event?.completed_now)
-    ? event.completed_now.map(stageId).filter(id => STAGES.some(stage => stage.id === id))
-    : [];
-  const counter = `${completed.length} of ${STAGES.length} checkpoints saved`;
-
-  if (!project) {
-    return { tone: 'waiting', badge: 'Waiting', title: 'Start with your business idea', detail: STAGE_ACTIVITY.discovery, counter };
-  }
-  if (TERMINAL_STATUSES.has(project.status)) {
-    return {
-      tone: project.status === 'needs_attention' ? 'failed' : 'complete',
-      badge: project.status === 'needs_attention' ? 'Review' : 'Ready',
-      title: project.status === 'needs_attention' ? 'The review needs attention' : 'The blueprint is ready',
-      detail: project.status === 'needs_attention'
-        ? 'The workflow stopped safely with review findings available in the Review tab.'
-        : 'Every agent checkpoint is saved and the cross-artifact review is complete.',
-      counter
-    };
-  }
-  if (!state.workflowRunning && project.status === 'generating') {
-    return {
-      tone: state.generationActivityPhase === 'failed' ? 'failed' : 'waiting',
-      badge: state.generationActivityPhase === 'failed' ? 'Paused' : 'Resume',
-      title: state.generationActivityPhase === 'failed' ? 'The current checkpoint paused safely' : 'Generation is waiting to continue',
-      detail: 'The saved workflow can resume from the next unfinished agent without repeating completed checkpoints.',
-      counter
-    };
-  }
-  if (state.generationActivityPhase === 'starting') {
-    return { tone: 'working', badge: 'Starting', title: 'Preparing the agent workflow', detail: 'Loading the confirmed discovery context and opening the first engineering checkpoint.', counter };
-  }
-  if (state.generationActivityPhase === 'transitioning' && completedNow.length) {
-    const finished = stageLabels(completedNow).join(' + ');
-    const next = stageLabels(running).join(' + ');
-    return {
-      tone: 'transitioning',
-      badge: 'Saved',
-      title: `${finished} checkpoint saved`,
-      detail: next ? `Moving to ${next}. The next agent receives the saved upstream output.` : 'Moving to the final workflow state.',
-      counter
-    };
-  }
-  if (running.length) {
-    const labels = stageLabels(running);
-    return {
-      tone: 'working',
-      badge: 'Live',
-      title: `${labels.join(' + ')} ${running.length > 1 ? 'agents' : 'agent'}`,
-      detail: running.map(id => STAGE_ACTIVITY[id]).join(' '),
-      counter
-    };
-  }
-  if (project.status === 'confirmed') {
-    return { tone: 'waiting', badge: 'Ready', title: 'Waiting to generate', detail: 'Discovery is confirmed. Start generation when you are ready.', counter };
-  }
-  if (project.status === 'ready_for_confirmation') {
-    return { tone: 'waiting', badge: 'Confirm', title: 'Discovery checkpoint is ready', detail: 'Review the known information and confirm it before engineering begins.', counter };
-  }
-  return { tone: 'working', badge: 'Live', title: 'Discovery agent', detail: STAGE_ACTIVITY.discovery, counter };
-}
-
-function renderAgentActivity(container, states, event = null) {
-  const activity = workflowActivity(states, event);
-  clear(container);
-  container.className = `agent-activity ${activity.tone}`;
-  container.setAttribute('aria-live', 'polite');
-
-  const head = node('div', 'activity-head');
-  const label = node('div', 'activity-label');
-  label.append(node('i', 'activity-signal'), node('span', '', 'Agent activity'));
-  head.append(label, node('span', 'activity-badge', activity.badge));
-
-  const copy = node('div', 'activity-copy');
-  copy.append(node('strong', '', activity.title), node('p', '', activity.detail));
-
-  const motion = node('div', 'activity-motion');
-  motion.setAttribute('aria-hidden', 'true');
-  motion.append(node('i'), node('i'), node('i'));
-
-  container.append(head, copy, motion, node('div', 'activity-counter', activity.counter));
-}
-
 function ensureProgressSurface(container, { chat = false } = {}) {
   let layout = container.querySelector('.workflow-progress-layout');
   if (layout) {
     return {
       copy: layout.querySelector('[data-progress-copy]'),
       status: layout.querySelector('[data-progress-status]'),
-      strip: layout.querySelector('.stage-strip'),
-      activity: layout.querySelector('.agent-activity')
+      strip: layout.querySelector('.stage-strip')
     };
   }
 
@@ -1301,14 +1203,12 @@ function ensureProgressSurface(container, { chat = false } = {}) {
     main.append(message);
   }
   main.append(buildStageStrip());
-  const activity = node('aside', 'agent-activity');
-  layout.append(main, activity);
+  layout.append(main);
   container.append(layout);
   return {
     copy: layout.querySelector('[data-progress-copy]'),
     status: layout.querySelector('[data-progress-status]'),
-    strip: layout.querySelector('.stage-strip'),
-    activity
+    strip: layout.querySelector('.stage-strip')
   };
 }
 
@@ -1317,7 +1217,6 @@ function updateProgressSurface(container, states, previousStates, event, options
   surface.copy.textContent = progressMessage(state.project, event);
   if (surface.status) surface.status.textContent = state.project ? labelFor(state.project.status || 'discovery') : 'New project';
   updateStageStrip(surface.strip, states, previousStates);
-  renderAgentActivity(surface.activity, states, event);
 }
 
 function renderProgress(event = null) {
@@ -1368,7 +1267,6 @@ async function refreshActiveProject() {
 async function runGeneration({ initialize }) {
   if (!state.project || state.workflowRunning || state.busy) return;
   state.workflowRunning = true;
-  state.generationActivityPhase = initialize ? 'starting' : 'working';
   setBusy(true);
   switchView('results');
   renderActionBar();
@@ -1379,7 +1277,6 @@ async function runGeneration({ initialize }) {
       lastEvent = await api(projectEndpoint(state.project.project_id, '/generate'), { method: 'POST' });
       if (eventContainsProject(lastEvent)) state.project = normalizeProject(lastEvent);
       else state.project = { ...state.project, status: 'generating', generation: lastEvent?.generation || state.project.generation };
-      state.generationActivityPhase = 'working';
       renderProject();
       switchView('results');
     }
@@ -1387,7 +1284,6 @@ async function runGeneration({ initialize }) {
     let complete = generationComplete(lastEvent);
     for (let step = 0; !complete && step < 24; step += 1) {
       const stageScope = state.project?.generation?.next_stage || `step-${step}`;
-      state.generationActivityPhase = 'working';
       renderProgress(lastEvent);
       lastEvent = await idempotentApi(
         projectEndpoint(state.project.project_id, '/generation/next'),
@@ -1397,7 +1293,6 @@ async function runGeneration({ initialize }) {
       if (eventContainsProject(lastEvent)) state.project = normalizeProject(lastEvent);
       else await refreshActiveProject();
       complete = generationComplete(lastEvent) || TERMINAL_STATUSES.has(state.project?.status);
-      state.generationActivityPhase = complete ? 'complete' : 'transitioning';
       renderProject();
       switchView('results');
       renderProgress(lastEvent);
@@ -1410,16 +1305,12 @@ async function runGeneration({ initialize }) {
     switchView('results');
     showBanner(state.project.status === 'needs_attention' ? 'Blueprint generated with review issues.' : 'Blueprint generation completed.', state.project.status === 'needs_attention' ? 'error' : 'success');
   } catch (error) {
-    state.generationActivityPhase = 'failed';
     try { await refreshActiveProject(); } catch { /* preserve the last visible state */ }
     renderProject();
     switchView('results');
     showBanner(readableError(error), 'error', true);
   } finally {
     state.workflowRunning = false;
-    if (state.generationActivityPhase !== 'failed') {
-      state.generationActivityPhase = TERMINAL_STATUSES.has(state.project?.status) ? 'complete' : 'idle';
-    }
     setBusy(false);
     renderActionBar();
     renderProgress(lastEvent);
@@ -1769,12 +1660,6 @@ function renderOverview(panel) {
     else if (isObject(value)) grid.append(genericSection(labelFor(key), value));
     else appendTextCard(grid, labelFor(key), value);
   });
-  const known = project.known_information || {};
-  if (hasValue(known)) {
-    const card = resultCard('Known information', { full: true });
-    appendKeyValues(card, known);
-    grid.append(card);
-  }
   const agentSummary = withoutKnownInformation(structuredTextValue(project.discovery?.summary));
   if (typeof agentSummary === 'string' && hasValue(agentSummary)) appendTextCard(grid, 'Agent summary', agentSummary, { full: true });
   else if (hasValue(agentSummary)) grid.append(genericSection('Agent summary', agentSummary));

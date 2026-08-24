@@ -109,7 +109,7 @@ body.busy button, body.busy textarea { cursor: progress; }
   border-radius: 14px;
   background: #fff;
 }
-.workflow-progress-layout { display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: 14px; align-items: stretch; }
+.workflow-progress-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; }
 .workflow-progress-main { min-width: 0; }
 .generation-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; }
 .generation-head strong { color: var(--brand-blue); }
@@ -141,33 +141,6 @@ body.busy button, body.busy textarea { cursor: progress; }
 @keyframes checkpointFocus { 0% { transform: translateY(0); } 48% { transform: translateY(-5px); } 100% { transform: translateY(-1px); } }
 @keyframes checkpointFailed { 0%,100% { transform: translateX(0); } 30% { transform: translateX(-4px); } 65% { transform: translateX(4px); } }
 @keyframes checkpointTravel { 0% { opacity: 0; transform: translateX(-4px) scale(.6); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(24px) scale(1); } }
-
-.agent-activity { min-width: 0; padding: 12px; border: 1px solid #d7e4e9; border-radius: 12px; background: linear-gradient(145deg, #f7fbfc, #fff); }
-.activity-head, .activity-label, .activity-counter { display: flex; align-items: center; }
-.activity-head { justify-content: space-between; gap: 8px; }
-.activity-label { gap: 7px; color: var(--brand-blue); font-size: 11px; font-weight: 850; letter-spacing: .02em; text-transform: uppercase; }
-.activity-signal { width: 8px; height: 8px; border-radius: 50%; background: #9aadb6; box-shadow: 0 0 0 4px #dfe8ec; }
-.agent-activity.working .activity-signal { background: var(--brand-cyan); box-shadow: 0 0 0 4px #00a2c824; animation: activitySignal 1.2s ease-in-out infinite; }
-.agent-activity.transitioning .activity-signal { background: var(--brand-yellow); box-shadow: 0 0 0 4px #ffca3332; }
-.agent-activity.complete .activity-signal { background: var(--ok); box-shadow: 0 0 0 4px #16815f20; }
-.agent-activity.failed .activity-signal { background: var(--brand-magenta); box-shadow: 0 0 0 4px #9e1f6320; }
-.activity-badge { padding: 2px 7px; border: 1px solid #c8dbe3; border-radius: 999px; color: #607984; background: #fff; font-size: 9px; font-weight: 900; text-transform: uppercase; }
-.agent-activity.working .activity-badge { border-color: #8bd4e4; color: #08708a; background: #eefafd; }
-.agent-activity.transitioning .activity-badge { border-color: #f0d675; color: #795d00; background: #fff9e5; }
-.agent-activity.complete .activity-badge { border-color: #afd9c9; color: #176a4c; background: #effaf5; }
-.agent-activity.failed .activity-badge { border-color: #dfb3c8; color: #8d194c; background: #fff4f8; }
-.activity-copy { margin-top: 14px; }
-.activity-copy strong { display: block; color: var(--brand-blue); font-size: 13px; line-height: 1.35; }
-.activity-copy p { margin: 5px 0 0; color: #607984; font-size: 11px; line-height: 1.55; }
-.activity-motion { display: flex; align-items: flex-end; gap: 4px; height: 24px; margin: 10px 0 8px; }
-.activity-motion i { width: 5px; border-radius: 999px; background: linear-gradient(180deg, var(--brand-cyan), var(--brand-blue)); animation: activityBars 1s ease-in-out infinite; }
-.activity-motion i:nth-child(1) { height: 9px; }
-.activity-motion i:nth-child(2) { height: 18px; animation-delay: .13s; }
-.activity-motion i:nth-child(3) { height: 13px; animation-delay: .26s; background: linear-gradient(180deg, var(--brand-yellow), var(--brand-magenta)); }
-.agent-activity:not(.working) .activity-motion i { animation: none; opacity: .42; }
-.activity-counter { min-height: 25px; padding-top: 8px; border-top: 1px solid #e2ecef; color: #7b8e98; font-size: 10px; }
-@keyframes activitySignal { 50% { transform: scale(.75); box-shadow: 0 0 0 7px #00a2c81a; } }
-@keyframes activityBars { 0%,100% { transform: scaleY(.55); opacity: .45; } 50% { transform: scaleY(1); opacity: 1; } }
 
 .work-view.results-view { display: none; max-width: 1160px; min-height: 100%; margin: 0 auto; padding: 24px 20px 90px; }
 .work-view.results-view.show { display: block; }
@@ -284,7 +257,6 @@ body.busy button, body.busy textarea { cursor: progress; }
 
 @media (max-width: 1050px) {
   .workflow-progress-layout { grid-template-columns: 1fr; }
-  .agent-activity { min-height: 132px; }
 }
 
 @media (max-width: 900px) {
@@ -315,5 +287,5 @@ body.busy button, body.busy textarea { cursor: progress; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loader-ring, .stage-pill, .stage-pill::after, .stage-pill.running .stage-dot, .activity-signal, .activity-motion i, .diagram-loading i, .skeleton::after { animation: none !important; transition: none !important; }
+  .loader-ring, .stage-pill, .stage-pill::after, .stage-pill.running .stage-dot, .diagram-loading i, .skeleton::after { animation: none !important; transition: none !important; }
 }

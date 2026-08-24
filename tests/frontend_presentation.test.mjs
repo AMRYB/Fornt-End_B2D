@@ -6,11 +6,11 @@ const projectRoot = new URL('../', import.meta.url);
 const appSource = readFileSync(new URL('public/assets/js/app.js', projectRoot), 'utf8');
 const cssSource = readFileSync(new URL('public/assets/css/app.css', projectRoot), 'utf8');
 
-test('known information has one structured presentation and legacy JSON is cleaned', () => {
+test('known information is omitted from the overview while legacy JSON is cleaned', () => {
   assert.match(appSource, /function isKnownInformationKey\(key\)/);
   assert.match(appSource, /withoutKnownInformation\(structuredTextValue\(project\.summary\)\)/);
   assert.match(appSource, /userFacingAgentMessage\(message\)/);
-  assert.match(appSource, /resultCard\('Known information', \{ full: true \}\)/);
+  assert.doesNotMatch(appSource, /resultCard\('Known information', \{ full: true \}\)/);
 });
 
 test('architecture renders a pinned, strict Mermaid diagram before other cards', () => {
@@ -42,13 +42,12 @@ test('Docker and YAML artifacts use themed syntax tokenization', () => {
   assert.match(cssSource, /\.syntax-key \{ color: #43d6f5/);
 });
 
-test('seven checkpoints and high-level agent activity have transition motion', () => {
-  assert.match(appSource, /className = `agent-activity \$\{activity\.tone\}`/);
+test('seven checkpoints have transition motion without an agent activity panel', () => {
+  assert.doesNotMatch(appSource, /agent-activity|renderAgentActivity|workflowActivity/);
   assert.match(appSource, /animateCheckpoint\(item, 'just-completed'\)/);
-  assert.match(appSource, /state\.generationActivityPhase = complete \? 'complete' : 'transitioning'/);
   assert.match(cssSource, /@keyframes checkpointTravel/);
   assert.match(cssSource, /@keyframes checkpointComplete/);
-  assert.match(cssSource, /@keyframes activityBars/);
+  assert.doesNotMatch(cssSource, /agent-activity|activityBars|activitySignal/);
   assert.match(cssSource, /grid-template-columns: repeat\(7, minmax\(0, 1fr\)\)/);
   assert.match(cssSource, /@media \(prefers-reduced-motion: reduce\)/);
 });
