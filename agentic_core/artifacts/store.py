@@ -8,6 +8,7 @@ write can therefore never corrupt or destroy the previously generated artifact.
 from __future__ import annotations
 
 import os
+import shutil
 from pathlib import Path
 
 
@@ -56,6 +57,14 @@ class ArtifactStore:
             return target.read_text(encoding="utf-8")
         return None
 
+    def delete(self, project_id: str) -> None:
+        """Remove every rendered artifact of a project (best-effort)."""
+
+        # Resolve through ``_safe_name`` exactly like write/list/read so a
+        # hostile identifier can never escape ``data/artifacts/``.
+        directory = self._base / _safe_name(project_id)
+        shutil.rmtree(directory, ignore_errors=True)
+
     def list_metadata(self, project_id: str) -> list[dict]:
         directory = self.project_dir(project_id)
         rows: list[dict] = []
@@ -77,4 +86,8 @@ class ArtifactStore:
 
 def _safe_name(name: str) -> str:
     cleaned = name.replace("\\", "/").split("/")[-1].strip()
-    return cleaned or "_"
+    # ``"."`` and ``".."`` are single path segments that would otherwise escape
+    # the artifacts base directory once joined (critical for rmtree on delete).
+    if cleaned in {"", ".", ".."}:
+        return "_"
+    return cleaned

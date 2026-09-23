@@ -54,7 +54,6 @@ const state = {
   pendingIdempotencyKeys: new Map(),
   stageVisualProjectId: null,
   stageVisualStates: null
-  };
 };
 
 function node(tag, className, text) {
@@ -260,7 +259,9 @@ function prepareShell() {
     exportButton.id = 'exportConversation';
     const copyLink = node('button', '', 'Copy project link');
     copyLink.id = 'copyProjectLink';
-    topMenu.append(exportButton, copyLink);
+    const deleteButton = node('button', 'danger', 'Delete project');
+    deleteButton.id = 'deleteChat';
+    topMenu.append(exportButton, copyLink, node('div', 'menu-sep'), deleteButton);
   }
 
   $('#greeting').textContent = 'What business idea are we turning into a blueprint?';
@@ -644,6 +645,7 @@ function renderProjects() {
     return;
   }
   projects.forEach(project => {
+    const wrap = node('div', 'project-row-wrap');
     const button = node('button', `side-row project-row${state.project?.project_id === project.project_id ? ' active' : ''}`);
     button.type = 'button';
     const icon = node('span', 'project-status-dot');
@@ -654,7 +656,16 @@ function renderProjects() {
     button.append(copy, icon);
     button.title = `${projectTitle(project)} · ${labelFor(project.status || 'discovery')}`;
     button.addEventListener('click', () => openProject(project.project_id));
-    container.append(button);
+    const remove = node('button', 'project-row-delete', '×');
+    remove.type = 'button';
+    remove.title = `Delete ${projectTitle(project)}`;
+    remove.setAttribute('aria-label', `Delete ${projectTitle(project)}`);
+    remove.addEventListener('click', event => {
+      event.stopPropagation();
+      deleteProject(project.project_id, { title: projectTitle(project) });
+    });
+    wrap.append(button, remove);
+    container.append(wrap);
   });
 }
 
@@ -670,6 +681,46 @@ async function loadProjects({ quiet = false } = {}) {
     if (!quiet) showBanner(readableError(error));
     throw error;
   }
+}
+
+async function deleteProject(projectId, { title = '' } = {}) {
+  if (!projectId || state.busy) return;
+  if (state.workflowRunning) {
+    showBanner('Wait for generation to finish before deleting this project.');
+    return;
+  }
+  const label = title
+    || projectTitle(state.project?.project_id === projectId
+      ? state.project
+      : state.projects.find(project => project.project_id === projectId));
+  const confirmed = window.confirm(
+    `Delete "${label}"? This permanently removes the conversation, blueprint, and generated files. This cannot be undone.`
+  );
+  if (!confirmed) return;
+  setBusy(true);
+  try {
+    await api(projectEndpoint(projectId), { method: 'DELETE' });
+    state.projects = state.projects.filter(project => project.project_id !== projectId);
+    if (state.project?.project_id === projectId) resetProject();
+    else renderProjects();
+    showBanner('Project deleted.', 'success');
+  } catch (error) {
+    showBanner(readableError(error));
+    // Re-sync in case the project was already removed by another tab.
+    await loadProjects({ quiet: true }).catch(() => {});
+  } finally {
+    setBusy(false);
+  }
+}
+
+function deleteCurrentProject() {
+  closeMenus();
+  const project = state.project;
+  if (!project) {
+    showBanner('Open a project first.');
+    return;
+  }
+  deleteProject(project.project_id, { title: projectTitle(project) });
 }
 
 async function openProject(projectId, { updateUrl = true } = {}) {
@@ -2235,6 +2286,7 @@ function bindEvents() {
   $('#logoutButton')?.addEventListener('click', logout);
   $('#exportConversation')?.addEventListener('click', exportConversation);
   $('#copyProjectLink')?.addEventListener('click', copyProjectLink);
+  $('#deleteChat')?.addEventListener('click', deleteCurrentProject);
   $('#attachBtn')?.addEventListener('click', () => showBanner('File attachments are not part of the current backend contract yet.'));
   $('#toolsBtn')?.addEventListener('click', () => showBanner('The coordinated seven-agent workflow selects the required tools automatically.', 'success'));
   $('#effortBtn')?.addEventListener('click', () => state.project ? switchView('results') : showBanner('Start a project to see agent progress.'));

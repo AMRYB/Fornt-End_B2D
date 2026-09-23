@@ -72,6 +72,12 @@ class ExecutionTracker:
         record.completed_at = datetime.now()
         self._append(record)
 
+    def delete(self, project_id: str) -> None:
+        """Remove the append-only run history of a project (best-effort)."""
+
+        with self._lock:
+            self._path(project_id).unlink(missing_ok=True)
+
     def list(self, project_id: str) -> list[RunRecord]:
         path = self._path(project_id)
         if not path.exists():

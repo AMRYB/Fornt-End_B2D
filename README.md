@@ -557,6 +557,7 @@ origins (dev setting).
 | POST   | `/api/projects/{id}/generate`                      | Kick off engineering in the background (409 if already running) |
 | GET    | `/api/projects/{id}/generation/status`             | **SSE** stream of agent events                          |
 | GET    | `/api/projects/{id}`                               | Full project state                                      |
+| DELETE | `/api/projects/{id}`                               | Delete a project + its artifacts and run history (204)   |
 | GET    | `/api/projects/{id}/artifacts`                     | List rendered artifact filenames                        |
 | GET    | `/api/projects/{id}/artifacts/{artifact_type}`     | Raw artifact content (plain text)                       |
 

@@ -1147,6 +1147,14 @@ async def delete_project(
 ):
     await _load(project_id, user.id)
     await asyncio.to_thread(services.project_store.delete, project_id, user.id)
+    # Derived local state (artifact files, JSONL run history) is cleaned up
+    # best-effort after the canonical row is gone; Supabase child rows already
+    # cascade with the projects row, so their store deletes are no-ops.
+    for cleanup in (services.artifact_store.delete, services.tracker.delete):
+        try:
+            await asyncio.to_thread(cleanup, project_id)
+        except Exception:  # noqa: BLE001 - the project itself is already deleted
+            pass
     return None
 
 

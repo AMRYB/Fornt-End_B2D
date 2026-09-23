@@ -60,6 +60,27 @@ body.busy button, body.busy textarea { cursor: progress; }
 .project-row .project-row-copy { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
 .project-row .project-row-title { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .project-row .project-row-time { color: #8799a3; font-size: 10px; line-height: 1.2; }
+.project-row-wrap { position: relative; }
+.project-row-delete {
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  color: #7b8f99;
+  font-size: 15px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity .12s ease, background .12s ease, color .12s ease;
+}
+.project-row-wrap:hover .project-row-delete,
+.project-row-delete:focus-visible { opacity: 1; }
+.project-row-delete:hover { background: #fdeef4; color: var(--brand-magenta); }
+@media (hover: none) { .project-row-delete { opacity: 1; } }
+.menu button.danger { color: var(--brand-magenta); }
+.menu button.danger:hover { background: #fbf0f6; }
 .project-status-dot { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); width: 9px; height: 9px; border-radius: 50%; background: #9cafb8; box-shadow: 0 0 0 3px #edf2f4; }
 .project-status-dot.approved, .project-status-dot.revised { background: var(--ok); box-shadow: 0 0 0 3px #dff4ec; }
 .project-status-dot.generating, .project-status-dot.confirmed { background: var(--brand-cyan); box-shadow: 0 0 0 3px #dff7fb; }

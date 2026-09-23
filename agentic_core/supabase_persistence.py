@@ -638,6 +638,11 @@ class SupabaseArtifactStore:
         )
         return str(rows[0].get("content_text") or "") if rows else None
 
+    def delete(self, project_id: str) -> None:
+        """No-op: artifact rows cascade with the projects row (see migration)."""
+
+        del project_id
+
 
 class SupabaseExecutionTracker:
     """ExecutionTracker-compatible agent telemetry persisted as table rows."""
@@ -803,6 +808,11 @@ class SupabaseExecutionTracker:
                 )
             )
         return records
+
+    def delete(self, project_id: str) -> None:
+        """No-op: agent_runs/workflow_runs rows cascade with the project."""
+
+        del project_id
 
 
 class SupabaseWorkflowStore:
